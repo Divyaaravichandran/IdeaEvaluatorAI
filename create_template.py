@@ -410,14 +410,12 @@ df = pd.DataFrame(ideas)
 
 # Add empty AI score columns
 ai_cols = [
-    "qwen_novelty", "qwen_feasibility",
+    "qwen_feasibility",
     "qwen_impact", "qwen_presentation",
     "qwen_overall", "qwen_rank",
-    "qwen_feedback",
-    "mistral_novelty", "mistral_feasibility",
+    "mistral_feasibility",
     "mistral_impact", "mistral_presentation",
     "mistral_overall", "mistral_rank",
-    "mistral_feedback",
     "llama_novelty", "llama_feasibility",
     "llama_impact", "llama_presentation",
     "llama_overall", "llama_rank",
