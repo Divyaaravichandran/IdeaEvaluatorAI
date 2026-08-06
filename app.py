@@ -67,7 +67,7 @@ def go_to(page):
 
 
 metrics = load_metrics()
-valid_pages = {"home", "leaderboard", "live", "detail"}
+valid_pages = {"home", "leaderboard", "comparison", "detail", "live"}
 url_page = requested_page()
 if "page" not in st.session_state:
     st.session_state.page = url_page if url_page in valid_pages else "home"
@@ -94,12 +94,14 @@ html, body, [data-testid="stAppViewContainer"] { font-family:'DM Sans',sans-seri
 .stButton > button { transition:transform .18s ease, box-shadow .18s ease; }.stButton > button:hover { transform:translateY(-1px); box-shadow:0 7px 16px rgba(8,127,89,.16); }
 .section-title { margin:70px 0 24px; text-align:center; }.section-title h2 { margin:0 0 7px; font-size:26px; }.section-title p { color:var(--muted); margin:0; }
 .chart-title { font-size:15px; font-weight:700; color:var(--ink); border-left:4px solid var(--green); padding-left:10px; }.stButton button[kind="primary"] { background:#087f59; border-color:#087f59; }
-@media(max-width:900px){ .st-key-navbar{padding-right:0}.metrics{grid-template-columns:repeat(2,1fr)} }.stButton button { cursor:pointer; } @media(max-width:600px){ .metrics,.comparison-grid{grid-template-columns:1fr}.hero h1{font-size:35px} }
+.comparison-hero { padding:24px 0 0; }.comparison-hero h1 { margin:0 0 8px; font-size:38px; letter-spacing:-1.7px; }.comparison-hero p { margin:0; color:var(--muted); }.comparison-section { margin-top:40px; padding-top:32px; border-top:1px solid var(--line); animation:fadeIn .4s ease both; }.comparison-section-title { margin:0 0 20px; font-size:20px; }.comparison-section-subtitle { margin:-12px 0 20px; color:var(--muted); font-size:13px; }.comparison-table-card, .chart-card, .scatter-card, .st-key-comparison_chart_left, .st-key-comparison_chart_right { width:100%; box-sizing:border-box; padding:20px 24px; border-radius:12px; background:rgba(255,255,255,.84); border:1px solid var(--line); box-shadow:0 10px 28px rgba(62,126,105,.08); }.comparison-table { width:100%; overflow-x:auto; border-radius:8px; }.comparison-table table { width:100%; border-collapse:separate; border-spacing:0; min-width:760px; }.comparison-table th { position:sticky; top:0; z-index:1; background:#e9f8f1; color:#37685c; text-align:left; padding:15px 17px; font-size:11px; text-transform:uppercase; letter-spacing:.7px; }.comparison-table td { padding:16px 17px; border-top:1px solid rgba(77,148,126,.12); font-size:13px; }.comparison-table tr { transition:background .2s ease; }.comparison-table tbody tr:hover { background:rgba(8,184,121,.06); }.comparison-table .best { background:linear-gradient(90deg,rgba(213,250,231,.9),rgba(255,255,255,.35)); box-shadow:inset 3px 0 0 #08b879; }.model-name { font-weight:700; color:#165b49; }.metric-cell { min-width:140px; }.metric-line { display:flex; justify-content:space-between; gap:10px; margin-bottom:7px; }.bar-track { height:7px; border-radius:8px; background:#dceee7; overflow:hidden; }.bar-fill { height:100%; border-radius:8px; }.metric-good { color:#087f59; }.metric-warn { color:#ad7800; }.metric-bad { color:#b42318; }.explain-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; align-items:stretch; }.explain-card { min-height:112px; box-sizing:border-box; padding:20px; border-radius:12px; background:#f1f5f9; border:1px solid var(--line); animation:fadeIn .4s ease both; }.explain-card strong { display:block; margin:8px 0 4px; }.explain-card span { color:var(--muted); font-size:12px; line-height:1.45; }.explain-icon { color:#087f59; font-size:20px; }.st-key-comparison_chart_left, .st-key-comparison_chart_right { height:380px; overflow:hidden; }.st-key-scatter_plot { margin-top:40px; height:400px; overflow:hidden; padding:20px 24px; border-radius:12px; background:rgba(255,255,255,.84); border:1px solid var(--line); box-shadow:0 10px 28px rgba(62,126,105,.08); }.chart-card h3 { margin:0 0 3px; font-size:15px; }.subtle-note { color:var(--muted); font-size:12px; margin:0 0 8px; } @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.detail-selector { margin-top:24px; padding:18px 20px; border-radius:12px; background:rgba(255,255,255,.8); border:1px solid var(--line); }.idea-header-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }.idea-info { padding:18px 20px; background:#fff; border:1px solid var(--line); border-radius:12px; min-height:74px; }.idea-info small { color:var(--muted); text-transform:uppercase; letter-spacing:.7px; font-size:10px; }.idea-info strong { display:block; margin-top:8px; font-size:19px; }.idea-info span { display:block; margin-top:8px; color:var(--muted); font-size:13px; }.tag { display:inline-block; padding:5px 10px; border-radius:999px; background:#e5f7ef; color:#087f59; font-size:12px; font-weight:700; }.status-agree { color:#087f59!important; }.status-disagree { color:#b42318!important; }.idea-description, .detail-card { padding:20px 24px; border-radius:12px; background:#fff; border:1px solid var(--line); box-shadow:0 10px 28px rgba(62,126,105,.08); line-height:1.6; }.idea-description h3 { margin:0 0 10px; font-size:16px; }.score-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }.score-card { height:120px; box-sizing:border-box; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:#fff; border:1px solid var(--line); border-radius:12px; transition:transform .2s ease, box-shadow .2s ease; animation:fadeIn .3s ease both; }.score-card:hover { transform:translateY(-3px); box-shadow:0 6px 16px rgba(0,0,0,.08); }.score-card small { color:var(--muted); font-size:11px; }.score-number { margin:5px 0 7px; font-size:30px; line-height:1; font-weight:700; }.score-mini-track { width:70%; height:6px; border-radius:6px; background:#e3eee9; overflow:hidden; }.score-mini-fill { height:100%; border-radius:6px; animation:grow .5s ease both; }.score-max { margin-top:5px; color:var(--muted); font-size:10px; }.detail-card-title { margin:0 0 16px; font-size:18px; } @keyframes grow { from{width:0} } @media(max-width:900px){ .idea-header-grid{grid-template-columns:1fr} .score-grid{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:900px){ .st-key-navbar{padding-right:0}.metrics{grid-template-columns:repeat(2,1fr)} .explain-grid{grid-template-columns:repeat(2,1fr)} }.st-key-detail_radar,.st-key-detail_bars{height:380px;overflow:hidden;padding:20px 24px;border-radius:12px;background:rgba(255,255,255,.84);border:1px solid var(--line);box-shadow:0 10px 28px rgba(62,126,105,.08)}.stButton button { cursor:pointer; } @media(max-width:600px){ .metrics,.comparison-grid,.explain-grid{grid-template-columns:1fr}.hero h1{font-size:35px} .comparison-table-card,.chart-card,.scatter-card{padding:16px}.chart-card,.scatter-card,.st-key-detail_radar,.st-key-detail_bars{height:auto;min-height:350px} }
 </style>
 """, unsafe_allow_html=True)
 
 with st.container(key="navbar"):
-    brand, home, leaderboard, live = st.columns([1.5, 1, 1.2, 1.4], vertical_alignment="center")
+    brand, home, leaderboard, comparison, detail, live = st.columns([1.25, .85, 1.05, 1.25, 1.0, 1.1], vertical_alignment="center")
     with brand:
         st.markdown('<div class="brand">▣ AIEval</div>', unsafe_allow_html=True)
     with home:
@@ -108,6 +110,12 @@ with st.container(key="navbar"):
     with leaderboard:
         if st.button("Leaderboard", key="leaderboard_nav", type="primary" if st.session_state.page == "leaderboard" else "secondary"):
             go_to("leaderboard")
+    with comparison:
+        if st.button("Model Comparison", key="comparison_nav", type="primary" if st.session_state.page == "comparison" else "secondary"):
+            go_to("comparison")
+    with detail:
+        if st.button("Idea Detail", key="detail_nav", type="primary" if st.session_state.page == "detail" else "secondary"):
+            go_to("detail")
     with live:
         if st.button("Live Evaluation", key="live_nav", type="primary" if st.session_state.page == "live" else "secondary"):
             go_to("live")
@@ -196,18 +204,117 @@ def leaderboard_page():
             st.write(feedback)
 
 
-def detail_page():
-    idea_id = st.session_state.get("selected_idea")
+def model_comparison_page():
     data = pd.read_excel(Path("ideas_scored.xlsx"))
-    idea = data.loc[data["idea_id"] == idea_id]
-    if idea.empty:
-        st.warning("Choose an idea from the Leaderboard first.")
-        return
-    item = idea.iloc[0]
-    st.markdown(f'<div class="section-title"><h2>{item["title"]}</h2><p>Rank #{int(item["final_rank"])} · {item["category"]}</p></div>', unsafe_allow_html=True)
-    st.write(item["description"])
-    if st.button("Back to Leaderboard"):
-        go_to("leaderboard")
+    model_map = {"Qwen3": ("qwen_overall", "qwen_rank", "qwen_accuracy"), "DeepSeek": ("mistral_overall", "mistral_rank", "mistral_accuracy"), "Llama 3.3": ("llama_overall", "llama_rank", "llama_accuracy")}
+    rows, chart_rows = [], []
+    truth = pd.to_numeric(data.get("advance"), errors="coerce").fillna(0).astype(int)
+    for name, (score_col, rank_col, accuracy_col) in model_map.items():
+        predicted = (pd.to_numeric(data[score_col], errors="coerce").fillna(0) >= 3).astype(int)
+        tp, tn = int(((predicted == 1) & (truth == 1)).sum()), int(((predicted == 0) & (truth == 0)).sum())
+        fp, fn = int(((predicted == 1) & (truth == 0)).sum()), int(((predicted == 0) & (truth == 1)).sum())
+        sensitivity = tp / (tp + fn) if tp + fn else 0
+        specificity = tn / (tn + fp) if tn + fp else 0
+        balanced = round((sensitivity + specificity) * 50, 1)
+        plain = round((tp + tn) / len(data) * 100, 1) if len(data) else 0
+        rows.append((name, balanced, plain, tp, tn, fp, fn))
+        chart_rows.append({"Model": name, "Balanced Accuracy": balanced, "Plain Accuracy": plain, "TP": tp, "TN": tn, "FP": fp, "FN": fn})
+    best_name = max(rows, key=lambda row: row[1])[0]
+    st.markdown('<section class="comparison-hero"><div class="badge">RESEARCH VALIDATION</div><h1>Model Comparison</h1><p>Transparent performance analysis across every scored idea in the evaluation dataset.</p></section>', unsafe_allow_html=True)
+    st.markdown(f'<section class="metrics" style="margin-top:32px"><article class="metric"><small>BEST MODEL</small><strong>{best_name}</strong><span>Highest balanced accuracy</span></article><article class="metric"><small>IDEAS EVALUATED</small><strong>{len(data)}</strong><span>Loaded from dataset</span></article><article class="metric"><small>LOWER BENCHMARK</small><strong>70%</strong><span>Minimum acceptable accuracy</span></article><article class="metric"><small>UPPER BENCHMARK</small><strong>80%</strong><span>Strong validation target</span></article></section>', unsafe_allow_html=True)
+    def level(value): return "metric-good" if value >= 80 else "metric-warn" if value >= 70 else "metric-bad"
+    def accuracy_cell(value):
+        color = "#08b879" if value >= 80 else "#e3b341" if value >= 70 else "#e05252"
+        return f'<td class="metric-cell" title="{value:.1f}% accuracy"><div class="metric-line"><span class="{level(value)}">{value:.1f}%</span><span>●</span></div><div class="bar-track"><div class="bar-fill" style="width:{min(value,100)}%;background:{color}"></div></div></td>'
+    table = '<div class="comparison-table"><table><thead><tr><th>Model</th><th>Balanced Accuracy</th><th>Plain Accuracy</th><th>TP</th><th>TN</th><th>FP</th><th>FN</th></tr></thead><tbody>'
+    for name, balanced, plain, tp, tn, fp, fn in rows:
+        best = ' best' if name == best_name else ''
+        table += f'<tr class="{best}"><td class="model-name">{name}{"  ✦" if name == best_name else ""}</td>{accuracy_cell(balanced)}{accuracy_cell(plain)}' + ''.join(f'<td title="{label}: {value} ideas">{value}</td>' for label, value in (("True positives",tp),("True negatives",tn),("False positives",fp),("False negatives",fn))) + '</tr>'
+    st.markdown('<section class="comparison-section"><h2 class="comparison-section-title">Accuracy Table</h2><div class="comparison-table-card">' + table + '</tbody></table></div></div></section>', unsafe_allow_html=True)
+    explanations = [("◌", "Balanced Accuracy", "Average of sensitivity and specificity"), ("＋", "TP · True Positive", "AI correctly said advance AND expert agreed"), ("−", "TN · True Negative", "AI correctly said reject AND expert agreed"), ("↗", "FP · False Positive", "AI said advance but expert rejected"), ("↘", "FN · False Negative", "AI said reject but expert accepted")]
+    st.markdown('<section class="comparison-section"><h2 class="comparison-section-title">How to read the metrics</h2><p class="comparison-section-subtitle">These measures show why the evaluation is reliable and valid.</p><section class="explain-grid">' + ''.join(f'<article class="explain-card" title="{desc}"><div class="explain-icon">{icon}</div><strong>{title}</strong><span>{desc}</span></article>' for icon,title,desc in explanations) + '</section></section>', unsafe_allow_html=True)
+    frame = pd.DataFrame(chart_rows)
+    st.markdown('<section class="comparison-section"><h2 class="comparison-section-title">Performance Charts</h2><p class="comparison-section-subtitle">Compare accuracy and decision outcomes across the evaluated models.</p>', unsafe_allow_html=True)
+    left, right = st.columns(2, gap="medium")
+    with left:
+        fig = go.Figure([go.Bar(name="Balanced Accuracy", x=frame.Model, y=frame["Balanced Accuracy"], marker_color="#087f59"), go.Bar(name="Plain Accuracy", x=frame.Model, y=frame["Plain Accuracy"], marker_color="#83cbb2")])
+        fig.add_hline(y=70, line_dash="dot", line_color="#df5656", annotation_text="70% benchmark"); fig.add_hline(y=80, line_dash="dot", line_color="#08a66d", annotation_text="80% benchmark")
+        fig.update_layout(barmode="group", yaxis=dict(range=[0,100],ticksuffix="%"), height=330, margin=dict(l=10,r=10,t=12,b=20), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="h"))
+        with st.container(key="comparison_chart_left"):
+            st.markdown('<h3>Balanced vs Plain Accuracy per Model</h3><p class="subtle-note">Higher is better against the 70–80% validation band.</p>', unsafe_allow_html=True)
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+    with right:
+        fig = go.Figure([go.Bar(name=key, x=frame.Model, y=frame[key], marker_color=color) for key,color in (("TP","#08b879"),("TN","#4a8ed8"),("FP","#e5a34b"),("FN","#df5656"))])
+        fig.update_layout(barmode="group", height=330, margin=dict(l=10,r=10,t=12,b=20), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="h"))
+        with st.container(key="comparison_chart_right"):
+            st.markdown('<h3>TP vs TN vs FP vs FN per Model</h3><p class="subtle-note">Decision outcomes across the full dataset.</p>', unsafe_allow_html=True)
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+    st.markdown('</section>', unsafe_allow_html=True)
+    st.markdown('<section class="comparison-section"><h2 class="comparison-section-title">AI Rank vs Expert Rank</h2><p class="comparison-section-subtitle">Closer to the diagonal means stronger agreement. Drag to pan or scroll to zoom.</p>', unsafe_allow_html=True)
+    rank_data = data[["title", "expert_rank", "final_rank"]].copy()
+    rank_data["expert_rank"] = pd.to_numeric(rank_data["expert_rank"], errors="coerce")
+    rank_data["final_rank"] = pd.to_numeric(rank_data["final_rank"], errors="coerce")
+    rank_data = rank_data.dropna(subset=["expert_rank", "final_rank"])
+    scatter = go.Figure(go.Scatter(x=rank_data["expert_rank"], y=rank_data["final_rank"], mode="markers", text=rank_data["title"], hovertemplate="%{text}<br>Expert rank: %{x}<br>AI rank: %{y}<extra></extra>", marker=dict(size=9, color="#08b879", opacity=.62)))
+    max_rank = max(rank_data["expert_rank"].max(), rank_data["final_rank"].max()) if not rank_data.empty else 1
+    scatter.add_trace(go.Scatter(x=[1,max_rank], y=[1,max_rank], mode="lines", line=dict(color="#df5656", dash="dot"), name="Perfect agreement"))
+    scatter.update_layout(height=390, margin=dict(l=10,r=10,t=10,b=25), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(255,255,255,.55)", xaxis_title="Expert Rank", yaxis_title="AI Final Rank", legend=dict(orientation="h"))
+    with st.container(key="scatter_plot"):
+        st.plotly_chart(scatter, use_container_width=True, config={"scrollZoom":True, "displayModeBar":True})
+
+
+def detail_page():
+    data = pd.read_excel(Path("ideas_scored.xlsx"))
+    st.markdown('<section class="comparison-hero"><div class="badge">RESEARCH EXPLORER</div><h1>Idea Detail</h1><p>Inspect one idea across every evaluation dimension and model.</p></section>', unsafe_allow_html=True)
+    choices = data[["idea_id", "title"]].dropna().itertuples(index=False, name=None)
+    choice_map = {f"#{int(idea_id)} · {title}": idea_id for idea_id, title in choices}
+    current = st.session_state.get("detail_idea_id", int(data.iloc[0]["idea_id"]))
+    current_label = next((label for label, idea_id in choice_map.items() if idea_id == current), next(iter(choice_map)))
+    with st.container(key="detail-selector"):
+        selected_label = st.selectbox("Select an idea to view", list(choice_map), index=list(choice_map).index(current_label))
+    item = data.loc[data["idea_id"] == choice_map[selected_label]].iloc[0]
+    st.session_state.detail_idea_id = int(item["idea_id"])
+    agreement = int(item.get("agrees_with_expert", 0)) == 1
+    status_text, status_class = ("✓ Agreement", "status-agree") if agreement else ("✕ Disagreement", "status-disagree")
+    st.markdown('<section class="comparison-section"><div class="idea-header-grid">' + ''.join([
+        f'<article class="idea-info"><small>Title</small><strong>{item["title"]}</strong></article>',
+        f'<article class="idea-info"><small>Category</small><span class="tag">{item["category"]}</span></article>',
+        f'<article class="idea-info"><small>Source</small><span>{item.get("source", "Dataset")}</span></article>',
+        f'<article class="idea-info"><small>Expert Rank</small><strong>#{int(item["expert_rank"])}</strong></article>',
+        f'<article class="idea-info"><small>AI Final Rank</small><strong>#{int(item["final_rank"])}</strong></article>',
+        f'<article class="idea-info"><small>Status</small><strong class="{status_class}">{status_text}</strong></article>'
+    ]) + '</div></section>', unsafe_allow_html=True)
+    st.markdown(f'<section class="comparison-section"><article class="idea-description"><h3>Idea Description</h3>{item["description"]}</article></section>', unsafe_allow_html=True)
+    model_info = [("Qwen3-32B", "qwen"), ("DeepSeek", "mistral"), ("Llama 3.3 70B", "llama")]
+    criteria = [("Novelty", "novelty"), ("Feasibility", "feasibility"), ("Impact", "impact"), ("Presentation", "presentation")]
+    def criterion_value(model_key, suffix):
+        column = f"{model_key}_{suffix}"
+        if column in data.columns and pd.notna(item[column]):
+            return float(item[column])
+        available = [float(item[f"{model_key}_{candidate}"]) for _, candidate in criteria if f"{model_key}_{candidate}" in data.columns and pd.notna(item[f"{model_key}_{candidate}"])]
+        return sum(available) / len(available) if available else float(item.get(f"{model_key}_overall", 0))
+    chart_rows = [{"Model": name, **{label: criterion_value(key, suffix) for label, suffix in criteria}} for name, key in model_info]
+    frame = pd.DataFrame(chart_rows)
+    radar = go.Figure()
+    for name, key in model_info:
+        values = [criterion_value(key, suffix) for _, suffix in criteria]
+        radar.add_trace(go.Scatterpolar(r=values + [values[0]], theta=[label for label, _ in criteria] + [criteria[0][0]], fill="toself", name=name, opacity=.65))
+    radar.update_layout(polar=dict(radialaxis=dict(range=[0,4], dtick=1)), height=310, margin=dict(l=20,r=20,t=10,b=10), paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="h"))
+    bars = go.Figure([go.Bar(name=name, x=frame.columns[1:], y=frame.iloc[index,1:]) for index, (name, _) in enumerate(model_info)])
+    bars.update_layout(barmode="group", yaxis=dict(range=[0,4], dtick=1), height=310, margin=dict(l=20,r=20,t=10,b=10), paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="h"))
+    st.markdown('<section class="comparison-section"><h2 class="comparison-section-title">Model Evaluation Breakdown</h2>', unsafe_allow_html=True)
+    left, right = st.columns(2, gap="medium")
+    with left:
+        with st.container(key="detail_radar"):
+            st.markdown('<h3 class="detail-card-title">Model Evaluation Breakdown</h3>', unsafe_allow_html=True); st.plotly_chart(radar, use_container_width=True, config={"displayModeBar":False})
+    with right:
+        with st.container(key="detail_bars"):
+            st.markdown('<h3 class="detail-card-title">Criteria Score Comparison</h3>', unsafe_allow_html=True); st.plotly_chart(bars, use_container_width=True, config={"displayModeBar":False})
+    st.markdown('</section>', unsafe_allow_html=True)
+    scores = [(name, float(item[f"{key}_overall"])) for name, key in model_info]
+    scores.append(("Average", sum(value for _, value in scores) / len(scores)))
+    progress = ''.join(f'<article class="score-card" title="{name}: {score:.2f} out of 4.0"><small>{name}</small><div class="score-number" style="color:{"#08b879" if score >= 3.7 else "#e3b341" if score >= 3.4 else "#df5656"}">{score:.2f}</div><div class="score-mini-track"><div class="score-mini-fill" style="width:{min(score/4*100,100):.1f}%;background:{"#08b879" if score >= 3.7 else "#e3b341" if score >= 3.4 else "#df5656"}"></div></div><span class="score-max">/ 4.0</span></article>' for name, score in scores)
+    st.markdown(f'<section class="comparison-section"><h2 class="comparison-section-title">Overall Score</h2><section class="score-grid">{progress}</section></section>', unsafe_allow_html=True)
 
 
 def live_page():
@@ -285,6 +392,8 @@ if st.session_state.page == "live":
     live_page()
 elif st.session_state.page == "leaderboard":
     leaderboard_page()
+elif st.session_state.page == "comparison":
+    model_comparison_page()
 elif st.session_state.page == "detail":
     detail_page()
 else:
