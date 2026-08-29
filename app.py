@@ -19,7 +19,7 @@ st.set_page_config(page_title="AIEval - AI Evaluation Dashboard", page_icon="✦
 
 
 @st.cache_data
-def load_metrics():
+def load_metrics(workbook_mtime=None):
     fallback = {
         "ideas": 50,
         "advancements": 10,
@@ -31,11 +31,19 @@ def load_metrics():
         data = pd.read_excel(Path("ideas_scored.xlsx"))
         if data.empty:
             return fallback
-        models = {
-            "Qwen3": round(data["qwen_accuracy"].mean()),
-            "DeepSeek": round(data["mistral_accuracy"].mean()),
-            "Llama": round(data["llama_accuracy"].mean()),
-        } if all(column in data for column in ("qwen_accuracy", "mistral_accuracy", "llama_accuracy")) else fallback["models"]
+        truth = pd.to_numeric(data.get("advance"), errors="coerce").fillna(0).astype(int)
+        finalist_count = int(truth.sum())
+        model_scores = {"Qwen3": "qwen_overall", "DeepSeek": "mistral_overall", "Llama": "llama_overall"}
+        models = {}
+        for name, score_column in model_scores.items():
+            predicted = pd.Series(0, index=data.index)
+            ranked_indices = data.sort_values(
+                [score_column, "idea_id"],
+                ascending=[False, True],
+                na_position="last",
+            ).head(finalist_count).index
+            predicted.loc[ranked_indices] = 1
+            models[name] = round((predicted == truth).mean() * 100)
         category_column = next((column for column in data if str(column).lower() in {"category", "domain", "idea category"}), None)
         categories = fallback["categories"]
         if category_column:
@@ -45,7 +53,7 @@ def load_metrics():
         return {
             "ideas": len(data),
             "advancements": int(data["ai_advance"].sum()) if "ai_advance" in data else min(10, len(data)),
-            "accuracy": round(data["combined_accuracy"].mean()) if "combined_accuracy" in data else round(sum(models.values()) / len(models)),
+            "accuracy": max(models.values()),
             "models": models,
             "categories": categories,
         }
@@ -66,7 +74,8 @@ def go_to(page):
     st.rerun()
 
 
-metrics = load_metrics()
+workbook_path = Path("ideas_scored.xlsx")
+metrics = load_metrics(workbook_path.stat().st_mtime if workbook_path.exists() else None)
 valid_pages = {"home", "leaderboard", "comparison", "detail", "live"}
 url_page = requested_page()
 if "page" not in st.session_state:
@@ -209,8 +218,11 @@ def model_comparison_page():
     model_map = {"Qwen3": ("qwen_overall", "qwen_rank", "qwen_accuracy"), "DeepSeek": ("mistral_overall", "mistral_rank", "mistral_accuracy"), "Llama 3.3": ("llama_overall", "llama_rank", "llama_accuracy")}
     rows, chart_rows = [], []
     truth = pd.to_numeric(data.get("advance"), errors="coerce").fillna(0).astype(int)
+    finalists_to_select = int(truth.sum())
     for name, (score_col, rank_col, accuracy_col) in model_map.items():
-        predicted = (pd.to_numeric(data[score_col], errors="coerce").fillna(0) >= 3).astype(int)
+        predicted = pd.Series(0, index=data.index)
+        ranked_indices = data[score_col].nlargest(finalists_to_select).index
+        predicted.loc[ranked_indices] = 1
         tp, tn = int(((predicted == 1) & (truth == 1)).sum()), int(((predicted == 0) & (truth == 0)).sum())
         fp, fn = int(((predicted == 1) & (truth == 0)).sum()), int(((predicted == 0) & (truth == 1)).sum())
         sensitivity = tp / (tp + fn) if tp + fn else 0

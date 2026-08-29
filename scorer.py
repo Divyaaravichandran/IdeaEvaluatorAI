@@ -15,7 +15,9 @@ INPUT_FILE = os.getenv("INPUT_FILE", "ideas.xlsx")
 OUTPUT_FILE = os.getenv("OUTPUT_FILE", "ideas_scored.xlsx")
 TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("LLM_TIMEOUT_SECONDS", "180"))
+SCORING_MAX_TOKENS = int(os.getenv("SCORING_MAX_TOKENS", "180"))
 HUMAN_REVIEW_SPREAD_THRESHOLD = 0.75
+ENSEMBLE_METHOD = os.getenv("ENSEMBLE_METHOD", "median").lower()
 MODEL_WEIGHTS = {
     "novelty": 0.20,
     "feasibility": 0.30,
@@ -126,6 +128,9 @@ def build_prompt(title, description):
 Score 4 only for exceptional ideas, 3 for good ideas, 2 for average ideas, and 1 for weak or common ideas.
 Novelty: originality. Feasibility: can a student team build it in 24-48 hours. Impact: real-world value. Presentation: clarity of the proposal.
 
+Advancement guidance: an idea is strongest when its weighted overall score is at least 3/4,
+with feasibility and impact also at least 3/4. Apply these standards consistently to every idea.
+
 Project title: {title}
 Project description: {description}
 
@@ -141,7 +146,9 @@ Project title: {title}
 Project description: {description}
 Scores: novelty={novelty}/4, feasibility={feasibility}/4, impact={impact}/4, presentation={presentation}/4.
 
-Give exactly three short, specific, actionable suggestions to improve the weakest areas. Number them 1, 2, and 3."""
+Give exactly three short, specific, actionable suggestions to improve the weakest areas.
+Each suggestion must be one numbered item and no more than 35 words.
+Number them 1, 2, and 3."""
 
 
 def parse_scores(text):
@@ -166,7 +173,13 @@ def complete_model(model_key, prompt, max_tokens=80):
 
 def score_model(model_key, title, description):
     try:
-        scores = parse_scores(complete_model(model_key, build_prompt(title, description)))
+        scores = parse_scores(
+            complete_model(
+                model_key,
+                build_prompt(title, description),
+                max_tokens=SCORING_MAX_TOKENS,
+            )
+        )
         if scores is None:
             raise ValueError("model did not return four valid scores in the 1-4 range")
         return model_key, scores, "completed"
@@ -246,6 +259,8 @@ def score_all_ideas():
         raise ValueError("FEEDBACK_MODE must be either 'single' or 'per_model'.")
     if FEEDBACK_MODEL_KEY not in MODEL_CONFIGS:
         raise ValueError(f"FEEDBACK_MODEL_KEY must be one of: {', '.join(MODEL_CONFIGS)}.")
+    if ENSEMBLE_METHOD not in {"mean", "median"}:
+        raise ValueError("ENSEMBLE_METHOD must be either 'mean' or 'median'.")
     if CHECKPOINT_EVERY < 1:
         raise ValueError("CHECKPOINT_EVERY must be at least 1.")
 
@@ -279,7 +294,10 @@ def score_all_ideas():
 
     score_columns = [f"{key}_overall" for key in MODEL_CONFIGS]
     dataframe[score_columns] = dataframe[score_columns].apply(pd.to_numeric, errors="coerce")
-    dataframe["avg_overall"] = dataframe[score_columns].mean(axis=1).round(2)
+    if ENSEMBLE_METHOD == "median":
+        dataframe["avg_overall"] = dataframe[score_columns].median(axis=1).round(2)
+    else:
+        dataframe["avg_overall"] = dataframe[score_columns].mean(axis=1).round(2)
     dataframe["score_spread"] = (dataframe[score_columns].max(axis=1) - dataframe[score_columns].min(axis=1)).round(2)
     dataframe["human_review_required"] = ((dataframe[score_columns].notna().sum(axis=1) < len(MODEL_CONFIGS)) | (dataframe["score_spread"] >= HUMAN_REVIEW_SPREAD_THRESHOLD)).astype(int)
     for model_key in MODEL_CONFIGS:
