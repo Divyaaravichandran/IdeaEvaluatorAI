@@ -1,4 +1,5 @@
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 import pandas as pd
@@ -8,6 +9,7 @@ import streamlit.components.v1 as components
 from scorer import (
     MODEL_CONFIGS,
     MODEL_WEIGHTS,
+    ENSEMBLE_METHOD,
     build_feedback_prompt,
     calculate_overall,
     complete_model,
@@ -106,6 +108,75 @@ html, body, [data-testid="stAppViewContainer"] { font-family:'DM Sans',sans-seri
 .comparison-hero { padding:24px 0 0; }.comparison-hero h1 { margin:0 0 8px; font-size:38px; letter-spacing:-1.7px; }.comparison-hero p { margin:0; color:var(--muted); }.comparison-section { margin-top:40px; padding-top:32px; border-top:1px solid var(--line); animation:fadeIn .4s ease both; }.comparison-section-title { margin:0 0 20px; font-size:20px; }.comparison-section-subtitle { margin:-12px 0 20px; color:var(--muted); font-size:13px; }.comparison-table-card, .chart-card, .scatter-card, .st-key-comparison_chart_left, .st-key-comparison_chart_right { width:100%; box-sizing:border-box; padding:20px 24px; border-radius:12px; background:rgba(255,255,255,.84); border:1px solid var(--line); box-shadow:0 10px 28px rgba(62,126,105,.08); }.comparison-table { width:100%; overflow-x:auto; border-radius:8px; }.comparison-table table { width:100%; border-collapse:separate; border-spacing:0; min-width:760px; }.comparison-table th { position:sticky; top:0; z-index:1; background:#e9f8f1; color:#37685c; text-align:left; padding:15px 17px; font-size:11px; text-transform:uppercase; letter-spacing:.7px; }.comparison-table td { padding:16px 17px; border-top:1px solid rgba(77,148,126,.12); font-size:13px; }.comparison-table tr { transition:background .2s ease; }.comparison-table tbody tr:hover { background:rgba(8,184,121,.06); }.comparison-table .best { background:linear-gradient(90deg,rgba(213,250,231,.9),rgba(255,255,255,.35)); box-shadow:inset 3px 0 0 #08b879; }.model-name { font-weight:700; color:#165b49; }.metric-cell { min-width:140px; }.metric-line { display:flex; justify-content:space-between; gap:10px; margin-bottom:7px; }.bar-track { height:7px; border-radius:8px; background:#dceee7; overflow:hidden; }.bar-fill { height:100%; border-radius:8px; }.metric-good { color:#087f59; }.metric-warn { color:#ad7800; }.metric-bad { color:#b42318; }.explain-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; align-items:stretch; }.explain-card { min-height:112px; box-sizing:border-box; padding:20px; border-radius:12px; background:#f1f5f9; border:1px solid var(--line); animation:fadeIn .4s ease both; }.explain-card strong { display:block; margin:8px 0 4px; }.explain-card span { color:var(--muted); font-size:12px; line-height:1.45; }.explain-icon { color:#087f59; font-size:20px; }.st-key-comparison_chart_left, .st-key-comparison_chart_right { height:380px; overflow:hidden; }.st-key-scatter_plot { margin-top:40px; height:400px; overflow:hidden; padding:20px 24px; border-radius:12px; background:rgba(255,255,255,.84); border:1px solid var(--line); box-shadow:0 10px 28px rgba(62,126,105,.08); }.chart-card h3 { margin:0 0 3px; font-size:15px; }.subtle-note { color:var(--muted); font-size:12px; margin:0 0 8px; } @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .detail-selector { margin-top:24px; padding:18px 20px; border-radius:12px; background:rgba(255,255,255,.8); border:1px solid var(--line); }.idea-header-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }.idea-info { padding:18px 20px; background:#fff; border:1px solid var(--line); border-radius:12px; min-height:74px; }.idea-info small { color:var(--muted); text-transform:uppercase; letter-spacing:.7px; font-size:10px; }.idea-info strong { display:block; margin-top:8px; font-size:19px; }.idea-info span { display:block; margin-top:8px; color:var(--muted); font-size:13px; }.tag { display:inline-block; padding:5px 10px; border-radius:999px; background:#e5f7ef; color:#087f59; font-size:12px; font-weight:700; }.status-agree { color:#087f59!important; }.status-disagree { color:#b42318!important; }.idea-description, .detail-card { padding:20px 24px; border-radius:12px; background:#fff; border:1px solid var(--line); box-shadow:0 10px 28px rgba(62,126,105,.08); line-height:1.6; }.idea-description h3 { margin:0 0 10px; font-size:16px; }.score-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }.score-card { height:120px; box-sizing:border-box; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:#fff; border:1px solid var(--line); border-radius:12px; transition:transform .2s ease, box-shadow .2s ease; animation:fadeIn .3s ease both; }.score-card:hover { transform:translateY(-3px); box-shadow:0 6px 16px rgba(0,0,0,.08); }.score-card small { color:var(--muted); font-size:11px; }.score-number { margin:5px 0 7px; font-size:30px; line-height:1; font-weight:700; }.score-mini-track { width:70%; height:6px; border-radius:6px; background:#e3eee9; overflow:hidden; }.score-mini-fill { height:100%; border-radius:6px; animation:grow .5s ease both; }.score-max { margin-top:5px; color:var(--muted); font-size:10px; }.detail-card-title { margin:0 0 16px; font-size:18px; } @keyframes grow { from{width:0} } @media(max-width:900px){ .idea-header-grid{grid-template-columns:1fr} .score-grid{grid-template-columns:repeat(2,1fr)} }
 @media(max-width:900px){ .st-key-navbar{padding-right:0}.metrics{grid-template-columns:repeat(2,1fr)} .explain-grid{grid-template-columns:repeat(2,1fr)} }.st-key-detail_radar,.st-key-detail_bars{height:380px;overflow:hidden;padding:20px 24px;border-radius:12px;background:rgba(255,255,255,.84);border:1px solid var(--line);box-shadow:0 10px 28px rgba(62,126,105,.08)}.stButton button { cursor:pointer; } @media(max-width:600px){ .metrics,.comparison-grid,.explain-grid{grid-template-columns:1fr}.hero h1{font-size:35px} .comparison-table-card,.chart-card,.scatter-card{padding:16px}.chart-card,.scatter-card,.st-key-detail_radar,.st-key-detail_bars{height:auto;min-height:350px} }
++
+
+/* Responsive layout refinements: preserve the existing visual system at every viewport. */
+*, *::before, *::after { box-sizing:border-box; }
+img, svg, canvas { max-width:100%; }
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > .main { min-width:0; }
+.block-container { width:100%; max-width:1240px; }
+.st-key-navbar { width:100%; }
+.st-key-navbar > div { flex-wrap:wrap; }
+.st-key-navbar button { white-space:nowrap; }
+.stMarkdown, .stDataFrame, [data-testid="stVerticalBlock"] { min-width:0; }
+
+@media (max-width:1100px) {
+  .block-container { padding-left:20px; padding-right:20px; }
+  .hero { padding-top:76px; padding-bottom:64px; }
+  .hero h1 { font-size:42px; }
+  .comparison-grid, .metrics { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .comparison-table-card, .chart-card, .scatter-card,
+  .st-key-comparison_chart_left, .st-key-comparison_chart_right,
+  .st-key-detail_radar, .st-key-detail_bars { padding:18px; }
+}
+
+@media (max-width:768px) {
+  .block-container { padding:8px 16px 40px; }
+  .hero { padding:54px 4px 46px; }
+  .hero h1 { margin-top:22px; font-size:clamp(30px, 6vw, 38px); letter-spacing:-1.4px; }
+  .hero p { font-size:14px; }
+  .comparison-hero h1 { font-size:clamp(28px, 6vw, 36px); }
+  .section-title { margin:48px 0 18px; }
+  .section-title h2, .comparison-section-title { font-size:22px; }
+  .metrics { gap:12px; }
+  .metric { padding:16px; min-height:92px; }
+  .metric strong { font-size:24px; }
+  .comparison-grid { gap:12px; }
+  .comparison-card { padding:20px 18px; }
+  .st-key-navbar > div { gap:4px; }
+  .st-key-navbar button { font-size:12px; padding:6px 8px; }
+  .st-key-comparison_chart_left, .st-key-comparison_chart_right,
+  .st-key-detail_radar, .st-key-detail_bars { min-height:320px; height:auto; overflow:visible; }
+  .stDataFrame { overflow-x:auto; }
+}
+
+@media (max-width:480px) {
+  .block-container { padding-left:12px; padding-right:12px; }
+  .hero { padding-top:38px; padding-bottom:34px; }
+  .badge { font-size:9px; padding:5px 11px; }
+  .hero h1 { font-size:29px; line-height:1.18; }
+  .hero p { font-size:13px; }
+  .metrics, .comparison-grid, .explain-grid, .score-grid { grid-template-columns:1fr; }
+  .metric { min-height:84px; }
+  .comparison-card ul { font-size:12px; line-height:1.7; }
+  .comparison-section { margin-top:28px; padding-top:24px; }
+  .comparison-section-subtitle, .subtle-note { font-size:12px; }
+  .comparison-table-card, .chart-card, .scatter-card,
+  .st-key-comparison_chart_left, .st-key-comparison_chart_right,
+  .st-key-detail_radar, .st-key-detail_bars { padding:12px; border-radius:10px; }
+  .st-key-comparison_chart_left, .st-key-comparison_chart_right,
+  .st-key-detail_radar, .st-key-detail_bars { min-height:280px; }
+  .idea-description, .detail-card { padding:16px; }
+  .score-card { height:108px; }
+  .st-key-navbar > div { justify-content:center; }
+  .st-key-navbar button { width:100%; min-height:36px; }
+}
+/* Requested UI visibility rules. */
+.brand { font-size:0; }
+.brand::after { content:'✦ AIEval'; font-size:18px; }
+.hidden-rank-comparison { display:none !important; }
+.st-key-scatter_plot { display:none !important; }
+.idea-header-grid > .idea-info:nth-child(n+4) { display:none; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -145,8 +216,8 @@ def home_page():
         st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
     with right:
         st.markdown('<div class="section-title"><h2>Ideas by category</h2></div>', unsafe_allow_html=True)
-        figure = go.Figure(go.Pie(labels=list(metrics["categories"]), values=list(metrics["categories"].values()), hole=.66, marker=dict(colors=["#08b879", "#76a79a", "#a2bdb5", "#d2e3de"]), textinfo="none"))
-        figure.update_layout(height=290, margin=dict(l=0, r=0, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="v", x=.62, y=.5))
+        figure = go.Figure(go.Pie(labels=list(metrics["categories"]), values=list(metrics["categories"].values()), hole=.66, marker=dict(colors=["#08b879", "#76a79a", "#a2bdb5", "#d2e3de"]), textinfo="none", domain=dict(x=[0, .62])))
+        figure.update_layout(height=290, margin=dict(l=0, r=0, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="v", x=.60, y=.5, xanchor="left", font=dict(size=11)))
         st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
     st.markdown('<div class="section-title"><h2>Innovation Benchmarking</h2><p>How the system improves on earlier evaluation approaches.</p></div>', unsafe_allow_html=True)
     comparisons = [
@@ -160,7 +231,7 @@ def home_page():
 
 def leaderboard_page():
     data = pd.read_excel(Path("ideas_scored.xlsx")).sort_values("final_rank", na_position="last")
-    st.markdown('<div class="section-title"><h2>Leaderboard</h2><p>Ranked hackathon ideas and AI advancement decisions.</p></div>', unsafe_allow_html=True)
+    st.markdown('<section class="comparison-hero"><div class="badge">RESEARCH LEADERBOARD</div><h1>Leaderboard</h1><p>Ranked hackathon ideas and AI advancement decisions.</p></section>', unsafe_allow_html=True)
     def focus_table():
         st.session_state.focus_leaderboard_table = True
 
@@ -262,7 +333,7 @@ def model_comparison_page():
             st.markdown('<h3>TP vs TN vs FP vs FN per Model</h3><p class="subtle-note">Decision outcomes across the full dataset.</p>', unsafe_allow_html=True)
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
     st.markdown('</section>', unsafe_allow_html=True)
-    st.markdown('<section class="comparison-section"><h2 class="comparison-section-title">AI Rank vs Expert Rank</h2><p class="comparison-section-subtitle">Closer to the diagonal means stronger agreement. Drag to pan or scroll to zoom.</p>', unsafe_allow_html=True)
+    st.markdown('<section class="comparison-section hidden-rank-comparison"><h2 class="comparison-section-title">AI Rank vs Expert Rank</h2><p class="comparison-section-subtitle">Closer to the diagonal means stronger agreement. Drag to pan or scroll to zoom.</p>', unsafe_allow_html=True)
     rank_data = data[["title", "expert_rank", "final_rank"]].copy()
     rank_data["expert_rank"] = pd.to_numeric(rank_data["expert_rank"], errors="coerce")
     rank_data["final_rank"] = pd.to_numeric(rank_data["final_rank"], errors="coerce")
@@ -330,7 +401,7 @@ def detail_page():
 
 
 def live_page():
-    st.markdown('<div class="section-title"><h2>Live Evaluation Studio</h2><p>Evaluate a hackathon idea with the AI review panel.</p></div>', unsafe_allow_html=True)
+    st.markdown('<section class="comparison-hero"><div class="badge">LIVE EVALUATION</div><h1>Live Evaluation Studio</h1><p>Evaluate a hackathon idea with the AI review panel.</p></section>', unsafe_allow_html=True)
     title = st.text_input("Project Title", placeholder="e.g. MediScan AI")
     description = st.text_area("Project Description", placeholder="Describe your idea in 3-5 sentences...", height=170)
     if st.button("Evaluate This Idea", type="primary", use_container_width=True):
@@ -340,37 +411,53 @@ def live_page():
         started = time.perf_counter()
         display_names = {"qwen": "Qwen3-32B", "mistral": "DeepSeek", "llama": "Llama 3.3 70B"}
         model_scores, feedback = {}, {}
-        for model_key in ("qwen", "mistral", "llama"):
-            name = display_names[model_key]
-            with st.spinner(f"Scoring with {name}..."):
-                _, criteria_scores, status = score_model(model_key, title, description)
+        model_keys = ("qwen", "mistral", "llama")
+        progress_slots = {key: st.empty() for key in model_keys}
+        progress_bars = {key: st.progress(0, text=f"Waiting for {display_names[key]}...") for key in model_keys}
+
+        def evaluate_model(model_key):
+            _, criteria_scores, status = score_model(model_key, title, description)
             if criteria_scores is None:
-                st.error(f"{name} could not evaluate this idea: {status}")
-                return
-            model_scores[model_key] = criteria_scores
-            with st.spinner(f"Preparing feedback from {name}..."):
-                try:
-                    feedback[model_key] = complete_model(
-                        model_key,
-                        build_feedback_prompt(title, description, criteria_scores),
-                        max_tokens=180,
-                    ).strip()
-                except Exception as error:
-                    feedback[model_key] = f"Feedback unavailable: {error}"
+                return model_key, None, f"Scoring failed: {status}"
+            try:
+                model_feedback = complete_model(
+                    model_key,
+                    build_feedback_prompt(title, description, criteria_scores),
+                    max_tokens=180,
+                ).strip()
+            except Exception as error:
+                model_feedback = f"Feedback unavailable: {error}"
+            return model_key, criteria_scores, model_feedback
+
+        with ThreadPoolExecutor(max_workers=len(model_keys)) as executor:
+            futures = [executor.submit(evaluate_model, key) for key in model_keys]
+            for completed, future in enumerate(as_completed(futures), start=1):
+                model_key, criteria_scores, model_feedback = future.result()
+                if criteria_scores is None:
+                    progress_bars[model_key].progress(1.0, text=f"{display_names[model_key]} failed")
+                    progress_slots[model_key].error(model_feedback)
+                    continue
+                model_scores[model_key] = criteria_scores
+                feedback[model_key] = model_feedback
+                progress_bars[model_key].progress(1.0, text=f"{display_names[model_key]} complete")
+
+        if not model_scores:
+            st.error("No model completed the evaluation.")
+            return
 
         elapsed = time.perf_counter() - started
         overall = {key: calculate_overall(scores) for key, scores in model_scores.items()}
-        average = round(sum(overall.values()) / len(overall), 2)
+        combined = round(pd.Series(list(overall.values())).median() if ENSEMBLE_METHOD == "median" else sum(overall.values()) / len(overall), 2)
         st.markdown('<div class="section-title"><h2>Evaluation Results</h2></div>', unsafe_allow_html=True)
         columns = st.columns(4)
         for column, model_key in zip(columns[:3], ("qwen", "mistral", "llama")):
             column.metric(display_names[model_key], f"{overall[model_key]:.2f} / 4.0")
-        columns[3].metric("Average", f"{average:.2f} / 4.0")
+        columns[3].metric("Combined", f"{combined:.2f} / 4.0")
 
-        advances = average >= 3.0
+        advances = combined >= 3.0 and all(model_scores[key][1] >= 3.0 and model_scores[key][2] >= 3.0 for key in model_scores)
         color, background = ("#087f59", "#d9f7e9") if advances else ("#b42318", "#ffe2e0")
         decision = "THIS IDEA SHOULD ADVANCE" if advances else "THIS IDEA DOES NOT ADVANCE"
-        st.markdown(f'<div style="margin:28px 0;padding:22px;border-radius:12px;background:{background};color:{color};text-align:center;font-size:20px;font-weight:700;border:1px solid {color}33">{decision}</div>', unsafe_allow_html=True)
+        # The advancement decision remains available to the business logic but is not shown in the UI.
 
         criteria = list(MODEL_WEIGHTS)
         rows = []
@@ -394,7 +481,7 @@ def live_page():
             dataset = pd.read_excel(Path("ideas_scored.xlsx"))
             score_column = next((column for column in ("avg_overall", "combined_score", "combined_accuracy") if column in dataset), None)
             if score_column:
-                rank = str(int((pd.to_numeric(dataset[score_column], errors="coerce") > average).sum()) + 1)
+                rank = str(int((pd.to_numeric(dataset[score_column], errors="coerce") > combined).sum()) + 1)
         except Exception:
             pass
         st.caption(f"Estimated rank if added to dataset: #{rank} out of {metrics['ideas']} · Evaluation completed in {elapsed:.1f} seconds")
