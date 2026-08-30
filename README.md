@@ -37,9 +37,10 @@ idea_id, title, description, advance, expert_rank
 
 Optional `category` and `source` columns are displayed when available.
 
-## Setup with Ollama
+## Ollama (primary)
 
-Install Ollama from [ollama.com](https://ollama.com), then download the models:
+1. Install Ollama from https://ollama.com.
+2. Download the three models:
 
 ```powershell
 ollama pull llama3.2:3b
@@ -47,50 +48,47 @@ ollama pull mistral:7b
 ollama pull qwen2.5:7b
 ```
 
-Install dependencies and run the smoke test:
+3. Install Python dependencies and run the local smoke test:
 
 ```powershell
 pip install -r requirements.txt
 python test.py
 ```
 
-## Run the evaluator
-
-Place the source dataset at `ideas.xlsx`, or configure `INPUT_FILE`, then run:
+4. Run the evaluator:
 
 ```powershell
 python scorer.py
 ```
 
-Results are written to `ideas_scored.xlsx`. The script checkpoints the workbook after each idea by default.
+The default Ollama endpoint is `http://127.0.0.1:11434`. The input is `ideas.xlsx`; output is `ideas_scored.xlsx`.
 
-## Run the dashboard
+## LM Studio (optional)
 
-After scoring, start Streamlit from the project directory:
+Load local Llama, Mistral, and Qwen models in LM Studio, start its local server, then create `.env` from `.env.example` and set:
 
-```powershell
-streamlit run app.py
+```env
+LLM_BACKEND=lm_studio
+LM_STUDIO_BASE_URL=http://127.0.0.1:1234/v1
+LLAMA_MODEL=your-loaded-llama-model-id
+MISTRAL_MODEL=your-loaded-mistral-model-id
+QWEN_MODEL=your-loaded-qwen-model-id
 ```
 
-The dashboard reads `ideas_scored.xlsx`. Regenerate the workbook and restart or refresh Streamlit after a new scoring run.
+LM Studio exposes an OpenAI-compatible local HTTP interface, but this project uses it only on `localhost`; it does not use an OpenAI account, API key, or hosted API.
 
+## Configuration
 
-## Project files
+Copy `.env.example` to `.env` only if you want to override defaults. Useful settings include `LLM_BACKEND`, local server URLs, model IDs, `LLM_TIMEOUT_SECONDS`, `INPUT_FILE`, and `OUTPUT_FILE`.
 
-```text
-app.py              Streamlit dashboard and live evaluation UI
-scorer.py           Model scoring, ensemble ranking, metrics, and feedback
-test.py             Local backend smoke test
-create_template.py  Creates a sample input workbook
-ideas.xlsx          Input idea dataset
-ideas_scored.xlsx   Generated scoring results
-requirements.txt    Python dependencies
+If you want the script to pick whichever local server is reachable, set:
+
+```env
+LLM_BACKEND=auto
 ```
 
-## Troubleshooting
+`FEEDBACK_MODE=single` is the default and makes one feedback request for each finalist. Set `FEEDBACK_MODE=per_model` when you need separate feedback from Llama, Mistral, and Qwen; this triples feedback generation work.
 
-- If the dashboard shows old values, confirm that `ideas_scored.xlsx` was regenerated in the same project directory and restart Streamlit.
-- If a model fails, verify that it is downloaded or loaded and reachable at the configured local endpoint.
-- If generation is slow, use smaller model tags, increase `LLM_TIMEOUT_SECONDS`, or reduce concurrent model execution.
-- If feedback is cut off, increase the feedback generation limit in the calling code.
+Scores are checkpointed to `ideas_scored.xlsx` after every idea by default, so a stopped run retains completed scores. Set `CHECKPOINT_EVERY` to a larger number if Excel writes become a bottleneck.
 
+GPU memory is the limiting factor when serving multiple models. For constrained hardware, use smaller Ollama model tags or run models sequentially by reducing the executor worker count in `scorer.py`.
