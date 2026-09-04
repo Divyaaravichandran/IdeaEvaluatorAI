@@ -177,13 +177,90 @@ img, svg, canvas { max-width:100%; }
 .hidden-rank-comparison { display:none !important; }
 .st-key-scatter_plot { display:none !important; }
 .idea-header-grid > .idea-info:nth-child(n+4) { display:none; }
+
+/* Premium product-demo visual system. */
+:root { --navy:#101a2e; --navy-2:#17243d; --ink:#15233b; --muted:#728097; --accent:#6d5dfc; --accent-2:#8b7dff; --mint:#27c7a5; --surface:rgba(255,255,255,.9); --line:#e8ebf2; --shadow:0 18px 50px rgba(22,35,59,.07); }
+html, body, [data-testid="stAppViewContainer"] { font-family:'DM Sans',sans-serif; color:var(--ink); }
+[data-testid="stAppViewContainer"] { background:#f5f7fb; }
+[data-testid="stHeader"] { background:rgba(245,247,251,.86); }
+.block-container { max-width:1400px; padding:36px 42px 72px; }
+[data-testid="stSidebar"] { background:linear-gradient(180deg,#111b30 0%,#182741 100%); border-right:0; }
+[data-testid="stSidebar"] > div:first-child { padding:26px 18px; }
+[data-testid="stSidebar"] * { color:#dce5f4; }
+[data-testid="stSidebar"] .brand { display:block; color:#fff; font-size:21px; letter-spacing:-.7px; padding:8px 12px 28px; }
+[data-testid="stSidebar"] .brand::after { content:'✦ AIEval'; font-size:21px; }
+[data-testid="stSidebar"] .sidebar-kicker { padding:0 12px 12px; color:#8191ad; font-size:10px; text-transform:uppercase; letter-spacing:1.5px; font-weight:700; }
+[data-testid="stSidebar"] .stButton { margin:3px 0; }
+[data-testid="stSidebar"] .stButton > button { justify-content:flex-start; width:100%; min-height:44px; padding:0 14px; border:1px solid transparent; border-radius:11px; background:transparent; color:#aebbd0; box-shadow:none; font-weight:600; text-align:left; transition:background .2s ease,color .2s ease,transform .2s ease; }
+[data-testid="stSidebar"] .stButton > button:hover { background:rgba(255,255,255,.08); color:#fff; transform:translateX(3px); box-shadow:none; }
+[data-testid="stSidebar"] .stButton > button[kind="primary"] { background:linear-gradient(135deg,#7061ff,#5a4cea); border-color:rgba(255,255,255,.08); color:#fff; box-shadow:0 10px 22px rgba(60,47,182,.3); }
+[data-testid="stSidebar"] .sidebar-foot { margin:40px 12px 0; padding-top:18px; border-top:1px solid rgba(255,255,255,.1); color:#8594ad; font-size:11px; line-height:1.55; }
+.navbar { display:none; }
+.st-key-navbar { display:none !important; }
+.hero { padding:76px 0 48px; text-align:left; max-width:900px; animation:riseIn .55s ease both; }
+.hero h1 { max-width:850px; margin:20px 0 16px; font-size:clamp(38px,4.5vw,64px); line-height:1.05; letter-spacing:-3px; color:var(--navy); }
+.hero p, .comparison-hero p { max-width:660px; color:var(--muted); font-size:15px; line-height:1.65; }
+.badge { color:#5b4de0; background:#efedff; border:1px solid #dcd8ff; padding:7px 12px; border-radius:7px; font-size:10px; font-weight:800; letter-spacing:1.3px; }
+.metrics { gap:18px; }
+.metric { min-height:128px; padding:22px; background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); animation:riseIn .45s ease both; transition:transform .25s ease,box-shadow .25s ease; }
+.metric:hover, .comparison-card:hover, .podium-card:hover, .score-card:hover, .explain-card:hover { transform:translateY(-4px); box-shadow:0 22px 44px rgba(22,35,59,.12); }
+.metric small { color:var(--muted); font-size:10px; letter-spacing:1.25px; }
+.metric strong { margin:12px 0 4px; color:var(--navy); font-size:32px; letter-spacing:-1.2px; }
+.metric span { color:var(--muted); font-size:12px; }
+.section-title { margin:58px 0 20px; text-align:left; }
+.section-title h2, .comparison-section-title { color:var(--navy); font-size:22px; letter-spacing:-.6px; }
+.section-title p, .comparison-section-subtitle { color:var(--muted); }
+.comparison-hero { padding:26px 0 8px; animation:riseIn .45s ease both; }
+.comparison-hero h1 { margin:17px 0 8px; color:var(--navy); font-size:42px; letter-spacing:-2px; }
+.comparison-section { margin-top:40px; padding-top:34px; border-top:1px solid var(--line); animation:riseIn .5s ease both; }
+.comparison-card, .comparison-table-card, .chart-card, .scatter-card, .st-key-comparison_chart_left, .st-key-comparison_chart_right, .st-key-detail_radar, .st-key-detail_bars, .st-key-scatter_plot, .idea-description, .detail-card { background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); }
+.comparison-card { padding:26px 24px; transition:transform .25s ease,box-shadow .25s ease; }
+.comparison-card.featured { background:linear-gradient(145deg,#f0eeff,#e4e0ff); border-color:#c9c2ff; }
+.comparison-card h3, .detail-card-title { color:var(--navy); }
+.comparison-card ul, .comparison-section-subtitle, .subtle-note { color:var(--muted); }
+.st-key-leaderboard_filters, .detail-selector { padding:20px; background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); }
+.st-key-leaderboard_filters { margin:20px 0 34px; }
+.stTextInput input, .stTextArea textarea, [data-baseweb="select"] > div { border-color:#dfe3ed !important; border-radius:10px !important; background:#fff !important; }
+.stTextInput input:focus, .stTextArea textarea:focus { border-color:var(--accent) !important; box-shadow:0 0 0 3px rgba(109,93,252,.12) !important; }
+.stButton > button { min-height:42px; border-radius:10px; border:1px solid #dfe3ed; background:#fff; color:var(--ink); font-weight:700; transition:transform .2s ease,box-shadow .2s ease,background .2s ease; }
+.stButton > button:hover { transform:translateY(-2px); box-shadow:0 10px 22px rgba(22,35,59,.12); }
+.stButton > button[kind="primary"] { background:linear-gradient(135deg,#7061ff,#5a4cea); border-color:#5a4cea; color:#fff; }
+.podium-card { border-radius:16px; box-shadow:var(--shadow); transition:transform .25s ease,box-shadow .25s ease; }
+.podium-card h3 { color:var(--navy); }
+.comparison-table-card, .st-key-comparison_chart_left, .st-key-comparison_chart_right, .st-key-detail_radar, .st-key-detail_bars { padding:22px; }
+.comparison-table th { background:#f3f4fb; color:#64718a; }
+.comparison-table td { border-top-color:#edf0f5; }
+.comparison-table tbody tr:hover { background:#f8f7ff; }
+.comparison-table .best { background:#f3f1ff; box-shadow:inset 3px 0 #6d5dfc; }
+.bar-track, .score-mini-track { background:#eceef5; }
+.bar-fill { background:linear-gradient(90deg,#6d5dfc,#27c7a5) !important; }
+.explain-card { background:#fbfbfe; border-color:var(--line); transition:transform .25s ease,box-shadow .25s ease; }
+.explain-icon, .model-name, .metric-good { color:#6354ea !important; }
+.idea-info, .idea-description, .score-card { background:#fff; border-color:var(--line); }
+.tag { background:#e9fbf6; color:#138d76; }
+.score-card { transition:transform .25s ease,box-shadow .25s ease; }
+.score-mini-fill { background:linear-gradient(90deg,#6d5dfc,#27c7a5) !important; }
+[data-testid="stDataFrame"] { border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); }
+[data-testid="stPlotlyChart"] { animation:fadeIn .55s ease both; }
+.stProgress > div > div > div { background:linear-gradient(90deg,#6d5dfc,#27c7a5); }
+@keyframes riseIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+@media (max-width:900px) { .block-container { padding:28px 24px 56px; } .hero { padding-top:48px; } }
+@media (max-width:600px) { .block-container { padding:22px 15px 44px; } .hero { padding:34px 0 34px; } .hero h1 { font-size:34px; letter-spacing:-1.6px; } .comparison-hero h1 { font-size:34px; } .metrics, .comparison-grid, .explain-grid, .score-grid { grid-template-columns:1fr; } }
 </style>
 """, unsafe_allow_html=True)
+
+with st.sidebar:
+    st.markdown('<div class="brand"></div><div class="sidebar-kicker">AI evaluation workspace</div>', unsafe_allow_html=True)
+    for page, label in (("home", "Home"), ("leaderboard", "Leaderboard"), ("comparison", "Model Comparison"), ("detail", "Idea Detail"), ("live", "Live Evaluation")):
+        if st.button(label, key=f"{page}_sidebar_nav", type="primary" if st.session_state.page == page else "secondary"):
+            go_to(page)
+    st.markdown('<div class="sidebar-foot">Multi-model evaluation<br>for better product decisions.</div>', unsafe_allow_html=True)
 
 with st.container(key="navbar"):
     brand, home, leaderboard, comparison, detail, live = st.columns([1.25, .85, 1.05, 1.25, 1.0, 1.1], vertical_alignment="center")
     with brand:
-        st.markdown('<div class="brand">▣ AIEval</div>', unsafe_allow_html=True)
+        st.markdown('<div class="brand"></div>', unsafe_allow_html=True)
     with home:
         if st.button("Home", key="home_nav", type="primary" if st.session_state.page == "home" else "secondary"):
             go_to("home")
