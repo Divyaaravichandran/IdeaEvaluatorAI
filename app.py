@@ -1,5 +1,7 @@
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import base64
+import html
 import time
 
 import pandas as pd
@@ -18,6 +20,13 @@ from scorer import (
 
 
 st.set_page_config(page_title="AIEval - AI Evaluation Dashboard", page_icon="✦", layout="wide", initial_sidebar_state="collapsed")
+
+
+background_image = Path(__file__).with_name("Bgpic.png")
+try:
+    background_data_uri = "data:image/png;base64," + base64.b64encode(background_image.read_bytes()).decode("ascii")
+except OSError:
+    background_data_uri = ""
 
 
 @st.cache_data
@@ -245,10 +254,115 @@ html, body, [data-testid="stAppViewContainer"] { font-family:'DM Sans',sans-seri
 .stProgress > div > div > div { background:linear-gradient(90deg,#6d5dfc,#27c7a5); }
 @keyframes riseIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 
+/* Shared dashboard background: cover the available screen on every page. */
+[data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > .main, .stApp {
+    background-color:#f5f7fb;
+    background-image:url("__BACKGROUND_IMAGE__");
+    background-size:cover;
+    background-position:center center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+}
+[data-testid="stHeader"] { background:rgba(245,247,251,.72); }
+
 @media (max-width:900px) { .block-container { padding:28px 24px 56px; } .hero { padding-top:48px; } }
 @media (max-width:600px) { .block-container { padding:22px 15px 44px; } .hero { padding:34px 0 34px; } .hero h1 { font-size:34px; letter-spacing:-1.6px; } .comparison-hero h1 { font-size:34px; } .metrics, .comparison-grid, .explain-grid, .score-grid { grid-template-columns:1fr; } }
+
+/* Home page composition based on the supplied reference image. */
+.st-key-home_page { width:100%; max-width:1080px; margin:0 auto; }
+.st-key-home_page .hero { padding:8px 0 48px; max-width:850px; }
+.st-key-home_page .hero h1 { color:#121b32; font-size:clamp(38px,4vw,56px); line-height:1.08; letter-spacing:-2.6px; margin-bottom:14px; }
+.st-key-home_page .hero p { color:#526486; font-size:15px; line-height:1.5; }
+.st-key-home_page .badge { color:#6354ea; background:rgba(239,237,255,.78); border-color:#cbc5ff; }
+.st-key-home_page .metrics { gap:16px; margin-bottom:38px; }
+.st-key-home_page .metric { min-height:101px; padding:17px 15px; background:rgba(255,255,255,.91); border-color:rgba(225,229,243,.95); border-radius:10px; box-shadow:0 12px 26px rgba(76,91,157,.08); }
+.st-key-home_page .metric { position:relative; padding-left:82px; }
+.st-key-home_page .metric::before { content:'✦'; position:absolute; left:16px; top:20px; width:44px; height:44px; display:grid; place-items:center; border-radius:50%; color:#fff; font-size:23px; background:linear-gradient(145deg,#5790ff,#214ddd); box-shadow:0 8px 16px rgba(42,91,224,.25); }
+.st-key-home_page .metric:nth-child(2)::before { content:'☆'; background:linear-gradient(145deg,#a77aff,#6731e9); box-shadow:0 8px 16px rgba(103,49,233,.22); }
+.st-key-home_page .metric:nth-child(3)::before { content:'◎'; background:linear-gradient(145deg,#37dcb8,#04a996); box-shadow:0 8px 16px rgba(4,169,150,.22); }
+.st-key-home_page .metric:nth-child(4)::before { content:'♧'; background:linear-gradient(145deg,#ffc36d,#f28d1e); box-shadow:0 8px 16px rgba(242,141,30,.22); }
+.st-key-home_page .metric small { color:#64718a; font-size:10px; letter-spacing:1px; }
+.st-key-home_page .metric strong { margin:13px 0 10px; color:#15233b; font-size:27px; letter-spacing:-.5px; }
+.st-key-home_page .metric span { color:#71809a; font-size:10px; }
+.st-key-home_page .section-title { margin:44px 0 14px; }
+.st-key-home_page .section-title h2 { color:#15233b; font-size:18px; letter-spacing:-.25px; }
+.st-key-home_page .section-title p { color:#71809a; font-size:12px; }
+.st-key-home_page [data-testid="stPlotlyChart"] { margin-top:-4px; }
+.st-key-home_page .st-key-home_accuracy_card, .st-key-home_page .st-key-home_category_card { min-height:446px; padding:24px 24px 16px; background:rgba(255,255,255,.93); border:1px solid rgba(225,229,243,.95); border-left:3px solid #2f68f0; border-radius:16px; box-shadow:0 15px 34px rgba(76,91,157,.10); }
+.st-key-home_page .st-key-home_category_card { border-left-color:#11b89e; }
+.st-key-home_page .st-key-home_accuracy_card .section-title, .st-key-home_page .st-key-home_category_card .section-title { margin:0 0 16px; }
+.st-key-home_page .st-key-home_accuracy_card .section-title h2, .st-key-home_page .st-key-home_category_card .section-title h2 { font-size:19px; }
+.st-key-home_page .comparison-grid { gap:12px; }
+.st-key-home_page .comparison-card { min-height:142px; padding:18px 15px 18px 76px; position:relative; background:rgba(255,255,255,.91); border-radius:16px; box-shadow:0 12px 26px rgba(76,91,157,.08); }
+.st-key-home_page .comparison-card::before { content:'▤'; position:absolute; left:18px; top:22px; width:40px; height:40px; display:grid; place-items:center; color:#3474f2; background:#e8f0ff; border-radius:10px; font-size:22px; }
+.st-key-home_page .comparison-card:nth-child(2)::before { content:'♧'; color:#7041ee; background:#f0eaff; }
+.st-key-home_page .comparison-card:nth-child(3)::before { content:'↗'; color:#10a888; background:#e2f7f1; }
+.st-key-home_page .comparison-card.featured { background:rgba(239,237,255,.88); border-color:#cbc5ff; }
+.st-key-home_page .comparison-card h3 { color:#15233b; font-size:16px; }
+.st-key-home_page .comparison-card ul { color:#71809a; font-size:13px; line-height:1.9; }
+.st-key-home_page > div:last-child { margin-top:12px; }
+@media (max-width:900px) { .st-key-home_page .metrics { grid-template-columns:repeat(2,1fr); } .st-key-home_page .st-key-home_accuracy_card, .st-key-home_page .st-key-home_category_card { min-height:420px; } }
+@media (max-width:600px) { .st-key-home_page .hero { padding-top:0; } .st-key-home_page .metrics { grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:28px; } .st-key-home_page .metric { padding-left:68px; } .st-key-home_page .metric::before { left:12px; width:38px; height:38px; } .st-key-home_page .metric strong { font-size:23px; } .st-key-home_page .metric small, .st-key-home_page .metric span { font-size:9px; } .st-key-home_page .st-key-home_accuracy_card, .st-key-home_page .st-key-home_category_card { min-height:380px; padding:18px 15px 10px; } }
+
+/* Leaderboard page uses the same polished visual language as Home. */
+.st-key-leaderboard_page { width:100%; max-width:1080px; margin:0 auto; }
+.st-key-leaderboard_page .comparison-hero { padding:8px 0 26px; }
+.st-key-leaderboard_page .comparison-hero h1 { color:#121b32; font-size:clamp(38px,4vw,56px); line-height:1.08; letter-spacing:-2.6px; }
+.st-key-leaderboard_page .comparison-hero p { color:#526486; font-size:15px; }
+.st-key-leaderboard_page .badge { color:#6354ea; background:rgba(239,237,255,.78); border-color:#cbc5ff; }
+.st-key-leaderboard_page .st-key-leaderboard_filters { margin:0 0 34px; padding:20px; background:rgba(255,255,255,.93); border:1px solid rgba(225,229,243,.95); border-radius:16px; box-shadow:0 15px 34px rgba(76,91,157,.10); }
+.st-key-leaderboard_page .section-title { margin:34px 0 16px; }
+.st-key-leaderboard_page .section-title h2 { color:#15233b; font-size:20px; }
+.st-key-leaderboard_page .podium-card { min-height:156px; padding:22px; background:rgba(255,255,255,.93); border:1px solid rgba(225,229,243,.95); border-radius:16px; box-shadow:0 15px 34px rgba(76,91,157,.10); }
+.st-key-leaderboard_page .podium-card.rank-1 { background:linear-gradient(145deg,rgba(232,240,255,.97),rgba(255,255,255,.93)); border-color:#a9c3ff; }
+.st-key-leaderboard_page .podium-card.rank-2 { background:linear-gradient(145deg,rgba(242,236,255,.97),rgba(255,255,255,.93)); border-color:#c9b8ff; }
+.st-key-leaderboard_page .podium-card.rank-3 { background:linear-gradient(145deg,rgba(228,249,244,.97),rgba(255,255,255,.93)); border-color:#a7e3d3; }
+.st-key-leaderboard_page .podium-card .rank { font-size:11px; letter-spacing:1px; }
+.st-key-leaderboard_page .podium-card h3 { margin:14px 0 8px; color:#15233b; font-size:18px; }
+.st-key-leaderboard_page .podium-card p { color:#71809a; font-size:13px; }
+.st-key-leaderboard_page .stDataFrame { margin-top:34px; background:rgba(255,255,255,.93); }
+.st-key-leaderboard_page .stExpander { background:rgba(255,255,255,.84); border:1px solid rgba(225,229,243,.95); border-radius:12px; margin:8px 0; }
+@media (max-width:600px) { .st-key-leaderboard_page .comparison-hero { padding-top:0; } .st-key-leaderboard_page .st-key-leaderboard_filters { padding:14px; } .st-key-leaderboard_page .podium-card h3 { font-size:16px; } }
+
+/* Keep every workspace page aligned with the Home composition. */
+.st-key-model_comparison_page, .st-key-detail_page, .st-key-live_page { width:100%; max-width:1080px; margin:0 auto; }
+.st-key-model_comparison_page .comparison-hero, .st-key-detail_page .comparison-hero, .st-key-live_page .comparison-hero { padding:8px 0 26px; }
+.st-key-model_comparison_page .comparison-hero h1, .st-key-detail_page .comparison-hero h1, .st-key-live_page .comparison-hero h1 { color:#121b32; font-size:clamp(38px,4vw,56px); line-height:1.08; letter-spacing:-2.6px; }
+.st-key-model_comparison_page .comparison-hero p, .st-key-detail_page .comparison-hero p, .st-key-live_page .comparison-hero p { color:#526486; font-size:15px; }
+.st-key-model_comparison_page .badge, .st-key-detail_page .badge, .st-key-live_page .badge { color:#6354ea; background:rgba(239,237,255,.78); border-color:#cbc5ff; }
+.st-key-model_comparison_page .comparison-section, .st-key-detail_page .comparison-section, .st-key-live_page .section-title { margin-top:34px; }
+.st-key-model_comparison_page .metrics { gap:16px; margin:0 0 38px; }
+.st-key-model_comparison_page .metric { min-height:101px; padding:17px 15px 17px 82px; background:rgba(255,255,255,.91); border-color:rgba(225,229,243,.95); border-radius:10px; box-shadow:0 12px 26px rgba(76,91,157,.08); position:relative; }
+.st-key-model_comparison_page .metric::before { content:'✦'; position:absolute; left:16px; top:20px; width:44px; height:44px; display:grid; place-items:center; border-radius:50%; color:#fff; font-size:23px; background:linear-gradient(145deg,#5790ff,#214ddd); }
+.st-key-model_comparison_page .metric:nth-child(2)::before { content:'☆'; background:linear-gradient(145deg,#a77aff,#6731e9); }
+.st-key-model_comparison_page .metric:nth-child(3)::before { content:'◎'; background:linear-gradient(145deg,#37dcb8,#04a996); }
+.st-key-model_comparison_page .metric:nth-child(4)::before { content:'♧'; background:linear-gradient(145deg,#ffc36d,#f28d1e); }
+.st-key-model_comparison_page .metric small { color:#64718a; font-size:10px; letter-spacing:1px; }
+.st-key-model_comparison_page .metric strong { margin:13px 0 10px; color:#15233b; font-size:27px; letter-spacing:-.5px; }
+.st-key-model_comparison_page .metric span { color:#71809a; font-size:10px; }
+.st-key-model_comparison_page .comparison-section-title, .st-key-detail_page .comparison-section-title { color:#15233b; }
+.st-key-detail_page .detail-selector, .st-key-live_page .stTextInput, .st-key-live_page .stTextArea { background:rgba(255,255,255,.93); }
+.st-key-live_page .stTextInput, .st-key-live_page .stTextArea { padding:0; }
+.leaderboard-table-wrap { width:100%; overflow-x:auto; background:rgba(255,255,255,.93); border:1px solid rgba(225,229,243,.95); border-radius:14px; box-shadow:0 12px 26px rgba(76,91,157,.08); }
+.leaderboard-table { width:100%; min-width:980px; border-collapse:separate; border-spacing:0; }
+.leaderboard-table th { padding:14px 12px; background:#f3f4fb; color:#111b35; text-align:left; font-size:11px; font-weight:800; letter-spacing:.5px; }
+.leaderboard-table td { padding:13px 12px; border-top:1px solid #edf0f5; color:#526486; font-size:12px; }
+.leaderboard-table tbody tr:hover { background:#f8f7ff; }
+@media (max-width:600px) { .st-key-model_comparison_page .comparison-hero, .st-key-detail_page .comparison-hero, .st-key-live_page .comparison-hero { padding-top:0; } .st-key-model_comparison_page .metric { padding-left:68px; } .st-key-model_comparison_page .metric::before { left:12px; width:38px; height:38px; } }
+
+/* Strong, high-contrast heading hierarchy. */
+.section-title h1, .section-title h2, .comparison-section-title, .comparison-hero h1,
+.comparison-card h3, .podium-card h3, .detail-card-title, .chart-title,
+.comparison-table th, .st-key-home_page .hero h1, .st-key-home_page .section-title h2,
+.st-key-leaderboard_page .section-title h2, .st-key-leaderboard_page .podium-card h3 {
+    color:#111b35;
+    font-weight:800;
+}
+.comparison-table th { font-weight:800; }
+.st-key-home_page .section-title h1, .st-key-home_page .section-title h2,
+.st-key-leaderboard_page .section-title h2 { text-shadow:0 1px 0 rgba(255,255,255,.7); }
 </style>
-""", unsafe_allow_html=True)
+""".replace("__BACKGROUND_IMAGE__", background_data_uri), unsafe_allow_html=True)
 
 with st.sidebar:
     st.markdown('<div class="brand"></div><div class="sidebar-kicker">AI evaluation workspace</div>', unsafe_allow_html=True)
@@ -278,25 +392,27 @@ with st.container(key="navbar"):
             go_to("live")
 
 
-def home_page():
+def _home_page_content():
     st.markdown("""
-    <section class="hero"><div class="badge">NEXT-GEN AI EVALUATION</div><h1>Hackathon Idea Evaluation and Ranking System Using Multiple LLMs</h1><p>Automatically evaluate, rank and explain hackathon ideas using 3 Large Language Models.</p></section>
+    <section class="hero"><div class="badge">NEXT-GEN AI EVALUATION</div><h1>Hackathon Idea Evaluation and Ranking System Using Multiple LLMs</h1><p>Multi-LLM evaluation. Smarter rankings. Better decisions.</p></section>
     """, unsafe_allow_html=True)
     cards = [("TOTAL IDEAS", metrics["ideas"], "Ideas processed from dataset"), ("AI ADVANCEMENTS", metrics["advancements"], "Shortlisted by consensus"), ("BEST MODEL ACCURACY", f'{metrics["accuracy"]}%', "Highest verification score"), ("MODELS COMPARED", "3", "State-of-the-art LLMs")]
     html = "".join(f'<article class="metric"><small>{label}</small><strong>{value}</strong><span>{description}</span></article>' for label, value, description in cards)
     st.markdown(f'<section class="metrics">{html}</section>', unsafe_allow_html=True)
     left, right = st.columns(2, gap="medium")
     with left:
-        st.markdown('<div class="section-title"><h2>Model accuracy</h2></div>', unsafe_allow_html=True)
-        figure = go.Figure(go.Bar(x=list(metrics["models"]), y=list(metrics["models"].values()), marker_color=["#087f59", "#08b879", "#61ddb0"], text=[f"{value}%" for value in metrics["models"].values()], textposition="outside"))
-        figure.update_layout(height=290, margin=dict(l=8, r=8, t=20, b=30), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis=dict(range=[0, 100], ticksuffix="%", gridcolor="rgba(31,108,82,.12)"), showlegend=False)
-        st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
+        with st.container(key="home_accuracy_card"):
+            st.markdown('<div class="section-title"><h2>Model accuracy</h2></div>', unsafe_allow_html=True)
+            figure = go.Figure(go.Bar(x=list(metrics["models"]), y=list(metrics["models"].values()), marker_color=["#2457d9", "#2479ee", "#18b9a4"], text=[f"{value}%" for value in metrics["models"].values()], textposition="outside"))
+            figure.update_layout(height=270, margin=dict(l=8, r=8, t=20, b=30), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis=dict(range=[0, 100], ticksuffix="%", gridcolor="rgba(84,109,170,.16)"), showlegend=False)
+            st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
     with right:
-        st.markdown('<div class="section-title"><h2>Ideas by category</h2></div>', unsafe_allow_html=True)
-        figure = go.Figure(go.Pie(labels=list(metrics["categories"]), values=list(metrics["categories"].values()), hole=.66, marker=dict(colors=["#08b879", "#76a79a", "#a2bdb5", "#d2e3de"]), textinfo="none", domain=dict(x=[0, .62])))
-        figure.update_layout(height=290, margin=dict(l=0, r=0, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="v", x=.60, y=.5, xanchor="left", font=dict(size=11)))
-        st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
-    st.markdown('<div class="section-title"><h2>Innovation Benchmarking</h2><p>How the system improves on earlier evaluation approaches.</p></div>', unsafe_allow_html=True)
+        with st.container(key="home_category_card"):
+            st.markdown('<div class="section-title"><h2>Ideas by category</h2></div>', unsafe_allow_html=True)
+            figure = go.Figure(go.Pie(labels=list(metrics["categories"]), values=list(metrics["categories"].values()), hole=.66, marker=dict(colors=["#08b879", "#26a9cf", "#2f68f0", "#8b4de8"], line=dict(color="#ffffff", width=2)), textinfo="none", domain=dict(x=[0, .62])))
+            figure.update_layout(height=270, margin=dict(l=0, r=0, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="v", x=.60, y=.5, xanchor="left", font=dict(size=10, color="#304263")))
+            st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
+    st.markdown('<div class="section-title"><h1>Innovation Benchmarking</h1><p><b>How the system improves on earlier evaluation approaches.</b></p></div>', unsafe_allow_html=True)
     comparisons = [
         ("Base Paper", ["GPT-3.5 only", "Climate change domain", "No feedback", "70–80% accuracy"], ""),
         ("Our System", ["3 LLMs compared", "Hackathon domain", "AI feedback given", "80%+ accuracy"], "featured"),
@@ -306,7 +422,12 @@ def home_page():
     st.markdown(f'<section class="comparison-grid">{comparison_html}</section>', unsafe_allow_html=True)
 
 
-def leaderboard_page():
+def home_page():
+    with st.container(key="home_page"):
+        _home_page_content()
+
+
+def _leaderboard_page_content():
     data = pd.read_excel(Path("ideas_scored.xlsx")).sort_values("final_rank", na_position="last")
     st.markdown('<section class="comparison-hero"><div class="badge">RESEARCH LEADERBOARD</div><h1>Leaderboard</h1><p>Ranked hackathon ideas and AI advancement decisions.</p></section>', unsafe_allow_html=True)
     def focus_table():
@@ -353,7 +474,18 @@ def leaderboard_page():
         "AI Decision": filtered["ai_advance"].map({1: "✅ Advance", 0: "❌ Reject"}),
         "Agrees with Expert": filtered["agrees_with_expert"].map({1: "✅", 0: "❌"}),
     })
-    st.dataframe(display, hide_index=True, use_container_width=True)
+    headers = ''.join(f'<th>{html.escape(str(column))}</th>' for column in display.columns)
+    body = ''.join(
+        '<tr>' + ''.join(
+            f'<td>{html.escape(f"{value:.2f}" if isinstance(value, float) else str(value))}</td>'
+            for value in row
+        ) + '</tr>'
+        for row in display.itertuples(index=False, name=None)
+    )
+    st.markdown(
+        f'<div class="leaderboard-table-wrap"><table class="leaderboard-table"><thead><tr>{headers}</tr></thead><tbody>{body}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
     st.markdown('<div class="section-title"><h2>Feedback for top 10 ideas</h2></div>', unsafe_allow_html=True)
     for _, idea in data.nsmallest(10, "final_rank").iterrows():
         feedback = idea.get("combined_feedback") or idea.get("llama_feedback") or "Feedback was not generated for this idea."
@@ -361,7 +493,12 @@ def leaderboard_page():
             st.write(feedback)
 
 
-def model_comparison_page():
+def leaderboard_page():
+    with st.container(key="leaderboard_page"):
+        _leaderboard_page_content()
+
+
+def _model_comparison_page_content():
     data = pd.read_excel(Path("ideas_scored.xlsx"))
     model_map = {"Qwen3": ("qwen_overall", "qwen_rank", "qwen_accuracy"), "DeepSeek": ("mistral_overall", "mistral_rank", "mistral_accuracy"), "Llama 3.3": ("llama_overall", "llama_rank", "llama_accuracy")}
     rows, chart_rows = [], []
@@ -423,7 +560,12 @@ def model_comparison_page():
         st.plotly_chart(scatter, use_container_width=True, config={"scrollZoom":True, "displayModeBar":True})
 
 
-def detail_page():
+def model_comparison_page():
+    with st.container(key="model_comparison_page"):
+        _model_comparison_page_content()
+
+
+def _detail_page_content():
     data = pd.read_excel(Path("ideas_scored.xlsx"))
     st.markdown('<section class="comparison-hero"><div class="badge">RESEARCH EXPLORER</div><h1>Idea Detail</h1><p>Inspect one idea across every evaluation dimension and model.</p></section>', unsafe_allow_html=True)
     choices = data[["idea_id", "title"]].dropna().itertuples(index=False, name=None)
@@ -477,7 +619,12 @@ def detail_page():
     st.markdown(f'<section class="comparison-section"><h2 class="comparison-section-title">Overall Score</h2><section class="score-grid">{progress}</section></section>', unsafe_allow_html=True)
 
 
-def live_page():
+def detail_page():
+    with st.container(key="detail_page"):
+        _detail_page_content()
+
+
+def _live_page_content():
     st.markdown('<section class="comparison-hero"><div class="badge">LIVE EVALUATION</div><h1>Live Evaluation Studio</h1><p>Evaluate a hackathon idea with the AI review panel.</p></section>', unsafe_allow_html=True)
     title = st.text_input("Project Title", placeholder="e.g. MediScan AI")
     description = st.text_area("Project Description", placeholder="Describe your idea in 3-5 sentences...", height=170)
@@ -562,6 +709,11 @@ def live_page():
         except Exception:
             pass
         st.caption(f"Estimated rank if added to dataset: #{rank} out of {metrics['ideas']} · Evaluation completed in {elapsed:.1f} seconds")
+
+
+def live_page():
+    with st.container(key="live_page"):
+        _live_page_content()
 
 
 if st.session_state.page == "live":
