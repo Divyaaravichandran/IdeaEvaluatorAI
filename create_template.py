@@ -1,7 +1,6 @@
 import pandas as pd
 
 ideas = [
-    # ── WINNERS (advance = 1) ──────────────────────────
     {
         "idea_id": 1, "title": "MediScan AI",
         "description": "An AI mobile app that detects skin diseases from photos using computer vision. Users upload a photo and get instant diagnosis with treatment recommendations and nearby clinic suggestions.",
