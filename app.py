@@ -12,10 +12,8 @@ from scorer import (
     MODEL_CONFIGS,
     MODEL_WEIGHTS,
     ENSEMBLE_METHOD,
-    build_feedback_prompt,
     calculate_overall,
-    complete_model,
-    score_model,
+    evaluate_live_model,
 )
 
 
@@ -29,47 +27,49 @@ except OSError:
     background_data_uri = ""
 
 
+DATA_FILE = Path("ideas_scored.xlsx")
+REQUIRED_DASHBOARD_COLUMNS = {
+    "idea_id", "title", "description", "category", "source", "advance",
+    "expert_rank", "avg_overall", "final_rank", "ai_advance",
+    "qwen_overall", "mistral_overall", "llama_overall",
+    "qwen_ai_advance", "mistral_ai_advance", "llama_ai_advance",
+    "human_review_required", "score_spread", "combined_feedback",
+}
+
+
 @st.cache_data
-def load_metrics(workbook_mtime=None):
-    fallback = {
-        "ideas": 50,
-        "advancements": 10,
-        "accuracy": 80,
-        "models": {"Qwen3": 78, "DeepSeek": 82, "Llama": 80},
-        "categories": {"Healthcare": 35, "Education": 25, "Environment": 20, "Others": 20},
+def load_dashboard_data(workbook_mtime):
+    """Load one validated scored workbook for every dashboard page."""
+    data = pd.read_excel(DATA_FILE)
+    missing = REQUIRED_DASHBOARD_COLUMNS - set(data.columns)
+    if missing:
+        raise ValueError(f"{DATA_FILE.name} is missing required scored columns: {', '.join(sorted(missing))}")
+    if data.empty:
+        raise ValueError(f"{DATA_FILE.name} contains no scored ideas.")
+    return data
+
+
+def load_metrics(data):
+    truth = pd.to_numeric(data["advance"], errors="coerce").fillna(0).astype(int)
+    model_predictions = {
+        "Qwen": "qwen_ai_advance",
+        "Mistral": "mistral_ai_advance",
+        "Llama": "llama_ai_advance",
     }
-    try:
-        data = pd.read_excel(Path("ideas_scored.xlsx"))
-        if data.empty:
-            return fallback
-        truth = pd.to_numeric(data.get("advance"), errors="coerce").fillna(0).astype(int)
-        finalist_count = int(truth.sum())
-        model_scores = {"Qwen3": "qwen_overall", "DeepSeek": "mistral_overall", "Llama": "llama_overall"}
-        models = {}
-        for name, score_column in model_scores.items():
-            predicted = pd.Series(0, index=data.index)
-            ranked_indices = data.sort_values(
-                [score_column, "idea_id"],
-                ascending=[False, True],
-                na_position="last",
-            ).head(finalist_count).index
-            predicted.loc[ranked_indices] = 1
-            models[name] = round((predicted == truth).mean() * 100)
-        category_column = next((column for column in data if str(column).lower() in {"category", "domain", "idea category"}), None)
-        categories = fallback["categories"]
-        if category_column:
-            counts = data[category_column].fillna("Others").astype(str).value_counts()
-            categories = {name: round(count / len(data) * 100) for name, count in counts.head(3).items()}
-            categories["Others"] = max(0, 100 - sum(categories.values()))
-        return {
-            "ideas": len(data),
-            "advancements": int(data["ai_advance"].sum()) if "ai_advance" in data else min(10, len(data)),
-            "accuracy": max(models.values()),
-            "models": models,
-            "categories": categories,
-        }
-    except Exception:
-        return fallback
+    models = {
+        name: round((pd.to_numeric(data[column], errors="coerce").fillna(0).astype(int) == truth).mean() * 100, 1)
+        for name, column in model_predictions.items()
+    }
+    counts = data["category"].fillna("Others").astype(str).value_counts()
+    categories = {name: round(count / len(data) * 100, 1) for name, count in counts.head(3).items()}
+    categories["Others"] = round(max(0, 100 - sum(categories.values())), 1)
+    return {
+        "ideas": len(data),
+        "advancements": int(pd.to_numeric(data["ai_advance"], errors="coerce").fillna(0).sum()),
+        "accuracy": max(models.values()),
+        "models": models,
+        "categories": categories,
+    }
 
 
 def requested_page():
@@ -85,8 +85,12 @@ def go_to(page):
     st.rerun()
 
 
-workbook_path = Path("ideas_scored.xlsx")
-metrics = load_metrics(workbook_path.stat().st_mtime if workbook_path.exists() else None)
+try:
+    dashboard_data = load_dashboard_data(DATA_FILE.stat().st_mtime)
+except (OSError, ValueError) as error:
+    st.error(f"Unable to load the scored dataset: {error}")
+    st.stop()
+metrics = load_metrics(dashboard_data)
 valid_pages = {"home", "leaderboard", "comparison", "detail", "live"}
 url_page = requested_page()
 if "page" not in st.session_state:
@@ -428,7 +432,12 @@ def home_page():
 
 
 def _leaderboard_page_content():
-    data = pd.read_excel(Path("ideas_scored.xlsx")).sort_values("final_rank", na_position="last")
+    data = dashboard_data.copy()
+    # Rank directly from the combined AI score. Ideas with equal scores share
+    # the same rank, rather than being forced into a 1–120 sequence.
+    data["avg_overall"] = pd.to_numeric(data["avg_overall"], errors="coerce")
+    data["ai_rank"] = pd.to_numeric(data["final_rank"], errors="coerce").astype("Int64")
+    data = data.sort_values("ai_rank", na_position="last").reset_index(drop=True)
     st.markdown('<section class="comparison-hero"><div class="badge">RESEARCH LEADERBOARD</div><h1>Leaderboard</h1><p>Ranked hackathon ideas and AI advancement decisions.</p></section>', unsafe_allow_html=True)
     def focus_table():
         st.session_state.focus_leaderboard_table = True
@@ -447,18 +456,18 @@ def _leaderboard_page_content():
         filtered = filtered[filtered["ai_advance"] == 0]
 
     st.markdown('<div class="section-title"><h2>Top ideas</h2></div>', unsafe_allow_html=True)
-    podium = data.nsmallest(3, "final_rank")
+    podium = data.nsmallest(3, "ai_rank")
     podium_columns = st.columns(3)
     medals = ["🥇", "🥈", "🥉"]
     for column, medal, (_, idea) in zip(podium_columns, medals, podium.iterrows()):
         with column:
-            style = f'rank-{int(idea["final_rank"])}'
-            st.markdown(f'<article class="podium-card {style}"><div class="rank">{medal} RANK {int(idea["final_rank"])}</div><h3>{idea["title"]}</h3><p>Avg: {idea["avg_overall"]:.2f} · {idea["category"]}</p></article>', unsafe_allow_html=True)
+            style = f'rank-{int(idea["ai_rank"])}'
+            st.markdown(f'<article class="podium-card {style}"><div class="rank">{medal} RANK {int(idea["ai_rank"])}</div><h3>{idea["title"]}</h3><p>Avg: {idea["avg_overall"]:.2f} · {idea["category"]}</p></article>', unsafe_allow_html=True)
             st.markdown('<div style="height:10px"></div>', unsafe_allow_html=True)
             button_left, button_center, button_right = st.columns([1, 1.3, 1])
             with button_center:
                 if st.button("View idea", key=f"podium_{idea['idea_id']}", type="secondary", use_container_width=True):
-                    st.session_state.selected_idea = int(idea["idea_id"])
+                    st.session_state.detail_idea_id = int(idea["idea_id"])
                     go_to("detail")
 
     st.markdown('<div style="height:42px"></div>', unsafe_allow_html=True)
@@ -467,12 +476,10 @@ def _leaderboard_page_content():
     if st.session_state.pop("focus_leaderboard_table", False):
         components.html("<script>window.parent.document.getElementById('leaderboard-table')?.scrollIntoView({behavior:'smooth', block:'start'});</script>", height=0)
     display = pd.DataFrame({
-        "Rank": filtered["final_rank"], "Idea Title": filtered["title"], "Category": filtered["category"],
-        "Qwen3 Score (out of 4)": filtered["qwen_overall"], "DeepSeek Score (out of 4)": filtered["mistral_overall"],
+        "AI Rank": filtered["ai_rank"], "Idea Title": filtered["title"], "Category": filtered["category"],
+        "Qwen3 Score (out of 4)": filtered["qwen_overall"], "Mistral Score (out of 4)": filtered["mistral_overall"],
         "Llama Score (out of 4)": filtered["llama_overall"], "Average Score (out of 4)": filtered["avg_overall"],
         "Expert Rank": filtered["expert_rank"],
-        "AI Decision": filtered["ai_advance"].map({1: "✅ Advance", 0: "❌ Reject"}),
-        "Agrees with Expert": filtered["agrees_with_expert"].map({1: "✅", 0: "❌"}),
     })
     headers = ''.join(f'<th>{html.escape(str(column))}</th>' for column in display.columns)
     body = ''.join(
@@ -486,10 +493,42 @@ def _leaderboard_page_content():
         f'<div class="leaderboard-table-wrap"><table class="leaderboard-table"><thead><tr>{headers}</tr></thead><tbody>{body}</tbody></table></div>',
         unsafe_allow_html=True,
     )
+
+    flagged = filtered.loc[
+        pd.to_numeric(filtered["human_review_required"], errors="coerce").fillna(0).eq(1)
+    ]
+    st.markdown(
+        f'<div class="section-title"><h2>Flagged ideas for human review ({len(flagged)})</h2>'
+        '<p>These ideas have incomplete model results or substantial disagreement between model scores.</p></div>',
+        unsafe_allow_html=True,
+    )
+    if flagged.empty:
+        st.info("No flagged ideas match the current filters.")
+    else:
+        flagged_display = pd.DataFrame({
+            "AI Rank": flagged["ai_rank"],
+            "Idea Title": flagged["title"],
+            "Category": flagged["category"],
+            "Average Score (out of 4)": flagged["avg_overall"],
+            "Score Difference": flagged["score_spread"],
+        })
+        flagged_headers = ''.join(f'<th>{html.escape(str(column))}</th>' for column in flagged_display.columns)
+        flagged_body = ''.join(
+            '<tr>' + ''.join(
+                f'<td>{html.escape(f"{value:.2f}" if isinstance(value, float) else str(value))}</td>'
+                for value in row
+            ) + '</tr>'
+            for row in flagged_display.itertuples(index=False, name=None)
+        )
+        st.markdown(
+            f'<div class="leaderboard-table-wrap"><table class="leaderboard-table"><thead><tr>{flagged_headers}</tr></thead><tbody>{flagged_body}</tbody></table></div>',
+            unsafe_allow_html=True,
+        )
+
     st.markdown('<div class="section-title"><h2>Feedback for top 10 ideas</h2></div>', unsafe_allow_html=True)
-    for _, idea in data.nsmallest(10, "final_rank").iterrows():
+    for _, idea in data.nsmallest(10, "ai_rank").iterrows():
         feedback = idea.get("combined_feedback") or idea.get("llama_feedback") or "Feedback was not generated for this idea."
-        with st.expander(f'#{int(idea["final_rank"])} · {idea["title"]}'):
+        with st.expander(f'#{int(idea["ai_rank"])} · {idea["title"]}'):
             st.write(feedback)
 
 
@@ -499,15 +538,12 @@ def leaderboard_page():
 
 
 def _model_comparison_page_content():
-    data = pd.read_excel(Path("ideas_scored.xlsx"))
-    model_map = {"Qwen3": ("qwen_overall", "qwen_rank", "qwen_accuracy"), "DeepSeek": ("mistral_overall", "mistral_rank", "mistral_accuracy"), "Llama 3.3": ("llama_overall", "llama_rank", "llama_accuracy")}
+    data = dashboard_data.copy()
+    model_map = {"Qwen": "qwen_ai_advance", "Mistral": "mistral_ai_advance", "Llama": "llama_ai_advance"}
     rows, chart_rows = [], []
     truth = pd.to_numeric(data.get("advance"), errors="coerce").fillna(0).astype(int)
-    finalists_to_select = int(truth.sum())
-    for name, (score_col, rank_col, accuracy_col) in model_map.items():
-        predicted = pd.Series(0, index=data.index)
-        ranked_indices = data[score_col].nlargest(finalists_to_select).index
-        predicted.loc[ranked_indices] = 1
+    for name, prediction_column in model_map.items():
+        predicted = pd.to_numeric(data[prediction_column], errors="coerce").fillna(0).astype(int)
         tp, tn = int(((predicted == 1) & (truth == 1)).sum()), int(((predicted == 0) & (truth == 0)).sum())
         fp, fn = int(((predicted == 1) & (truth == 0)).sum()), int(((predicted == 0) & (truth == 1)).sum())
         sensitivity = tp / (tp + fn) if tp + fn else 0
@@ -566,7 +602,7 @@ def model_comparison_page():
 
 
 def _detail_page_content():
-    data = pd.read_excel(Path("ideas_scored.xlsx"))
+    data = dashboard_data.copy()
     st.markdown('<section class="comparison-hero"><div class="badge">RESEARCH EXPLORER</div><h1>Idea Detail</h1><p>Inspect one idea across every evaluation dimension and model.</p></section>', unsafe_allow_html=True)
     choices = data[["idea_id", "title"]].dropna().itertuples(index=False, name=None)
     choice_map = {f"#{int(idea_id)} · {title}": idea_id for idea_id, title in choices}
@@ -587,7 +623,7 @@ def _detail_page_content():
         f'<article class="idea-info"><small>Status</small><strong class="{status_class}">{status_text}</strong></article>'
     ]) + '</div></section>', unsafe_allow_html=True)
     st.markdown(f'<section class="comparison-section"><article class="idea-description"><h3>Idea Description</h3>{item["description"]}</article></section>', unsafe_allow_html=True)
-    model_info = [("Qwen3-32B", "qwen"), ("DeepSeek", "mistral"), ("Llama 3.3 70B", "llama")]
+    model_info = [("Qwen", "qwen"), ("Mistral", "mistral"), ("Llama", "llama")]
     criteria = [("Novelty", "novelty"), ("Feasibility", "feasibility"), ("Impact", "impact"), ("Presentation", "presentation")]
     def criterion_value(model_key, suffix):
         column = f"{model_key}_{suffix}"
@@ -633,28 +669,14 @@ def _live_page_content():
             st.warning("Please enter both a project title and description before evaluating.")
             return
         started = time.perf_counter()
-        display_names = {"qwen": "Qwen3-32B", "mistral": "DeepSeek", "llama": "Llama 3.3 70B"}
+        display_names = {"qwen": "Qwen3-32B", "mistral": "Mistral", "llama": "Llama 3.3 70B"}
         model_scores, feedback = {}, {}
         model_keys = ("qwen", "mistral", "llama")
         progress_slots = {key: st.empty() for key in model_keys}
         progress_bars = {key: st.progress(0, text=f"Waiting for {display_names[key]}...") for key in model_keys}
 
-        def evaluate_model(model_key):
-            _, criteria_scores, status = score_model(model_key, title, description)
-            if criteria_scores is None:
-                return model_key, None, f"Scoring failed: {status}"
-            try:
-                model_feedback = complete_model(
-                    model_key,
-                    build_feedback_prompt(title, description, criteria_scores),
-                    max_tokens=180,
-                ).strip()
-            except Exception as error:
-                model_feedback = f"Feedback unavailable: {error}"
-            return model_key, criteria_scores, model_feedback
-
         with ThreadPoolExecutor(max_workers=len(model_keys)) as executor:
-            futures = [executor.submit(evaluate_model, key) for key in model_keys]
+            futures = [executor.submit(evaluate_live_model, key, title, description) for key in model_keys]
             for completed, future in enumerate(as_completed(futures), start=1):
                 model_key, criteria_scores, model_feedback = future.result()
                 if criteria_scores is None:
@@ -675,10 +697,11 @@ def _live_page_content():
         st.markdown('<div class="section-title"><h2>Evaluation Results</h2></div>', unsafe_allow_html=True)
         columns = st.columns(4)
         for column, model_key in zip(columns[:3], ("qwen", "mistral", "llama")):
-            column.metric(display_names[model_key], f"{overall[model_key]:.2f} / 4.0")
+            value = f"{overall[model_key]:.2f} / 4.0" if model_key in overall else "Unavailable"
+            column.metric(display_names[model_key], value)
         columns[3].metric("Combined", f"{combined:.2f} / 4.0")
 
-        advances = combined >= 3.0 and all(model_scores[key][1] >= 3.0 and model_scores[key][2] >= 3.0 for key in model_scores)
+        advances = combined >= 3.0 and all(scores[1] >= 3.0 and scores[2] >= 3.0 for scores in model_scores.values())
         color, background = ("#087f59", "#d9f7e9") if advances else ("#b42318", "#ffe2e0")
         decision = "THIS IDEA SHOULD ADVANCE" if advances else "THIS IDEA DOES NOT ADVANCE"
         # The advancement decision remains available to the business logic but is not shown in the UI.
@@ -686,8 +709,12 @@ def _live_page_content():
         criteria = list(MODEL_WEIGHTS)
         rows = []
         for index, criterion in enumerate(criteria):
-            values = [model_scores[key][index] for key in ("qwen", "mistral", "llama")]
-            rows.append({"Criterion": criterion.title(), "Qwen3": values[0], "DeepSeek": values[1], "Llama": values[2], "Average": round(sum(values) / 3, 2)})
+            values = {key: scores[index] for key, scores in model_scores.items()}
+            rows.append({
+                "Criterion": criterion.title(),
+                "Qwen": values.get("qwen"), "Mistral": values.get("mistral"), "Llama": values.get("llama"),
+                "Average": round(sum(values.values()) / len(values), 2),
+            })
         st.markdown('<div class="section-title"><h2>Criteria Breakdown</h2></div>', unsafe_allow_html=True)
         st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
         for row in rows:
@@ -698,14 +725,11 @@ def _live_page_content():
         for column, model_key in zip(feedback_columns, ("qwen", "mistral", "llama")):
             with column:
                 st.markdown(f'#### {display_names[model_key]} says:')
-                st.markdown(feedback[model_key])
+                st.markdown(feedback.get(model_key, "Feedback unavailable because this model did not complete."))
 
         rank = "N/A"
         try:
-            dataset = pd.read_excel(Path("ideas_scored.xlsx"))
-            score_column = next((column for column in ("avg_overall", "combined_score", "combined_accuracy") if column in dataset), None)
-            if score_column:
-                rank = str(int((pd.to_numeric(dataset[score_column], errors="coerce") > combined).sum()) + 1)
+            rank = str(int((pd.to_numeric(dashboard_data["avg_overall"], errors="coerce") > combined).sum()) + 1)
         except Exception:
             pass
         st.caption(f"Estimated rank if added to dataset: #{rank} out of {metrics['ideas']} · Evaluation completed in {elapsed:.1f} seconds")

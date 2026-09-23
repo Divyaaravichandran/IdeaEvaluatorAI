@@ -15,7 +15,11 @@ INPUT_FILE = os.getenv("INPUT_FILE", "ideas.xlsx")
 OUTPUT_FILE = os.getenv("OUTPUT_FILE", "ideas_scored.xlsx")
 TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("LLM_TIMEOUT_SECONDS", "180"))
-SCORING_MAX_TOKENS = int(os.getenv("SCORING_MAX_TOKENS", "180"))
+# A score is four digits and separators.  Keeping this small prevents a model
+# from spending time explaining a response that the caller intentionally ignores.
+SCORING_MAX_TOKENS = int(os.getenv("SCORING_MAX_TOKENS", "16"))
+LIVE_EVALUATION_MAX_TOKENS = int(os.getenv("LIVE_EVALUATION_MAX_TOKENS", "110"))
+OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
 HUMAN_REVIEW_SPREAD_THRESHOLD = 0.75
 ENSEMBLE_METHOD = os.getenv("ENSEMBLE_METHOD", "median").lower()
 MODEL_WEIGHTS = {
@@ -35,6 +39,15 @@ LEGACY_MODEL_KEYS = ("qwen3_32b", "deepseek")
 FEEDBACK_MODE = os.getenv("FEEDBACK_MODE", "single").lower()
 FEEDBACK_MODEL_KEY = os.getenv("FEEDBACK_MODEL_KEY", "llama")
 CHECKPOINT_EVERY = int(os.getenv("CHECKPOINT_EVERY", "1"))
+VALIDATION_FRACTION = float(os.getenv("VALIDATION_FRACTION", "0.20"))
+VALIDATION_RANDOM_SEED = int(os.getenv("VALIDATION_RANDOM_SEED", "42"))
+THRESHOLD_CANDIDATES = tuple(
+    float(value.strip())
+    for value in os.getenv("DECISION_THRESHOLDS", "2.8,3.0,3.2").split(",")
+    if value.strip()
+)
+MIN_FEASIBILITY_FOR_ADVANCE = float(os.getenv("MIN_FEASIBILITY_FOR_ADVANCE", "3"))
+MIN_IMPACT_FOR_ADVANCE = float(os.getenv("MIN_IMPACT_FOR_ADVANCE", "3"))
 
 
 class LocalLLMClient:
@@ -90,6 +103,7 @@ class LocalLLMClient:
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "stream": False,
+                "keep_alive": OLLAMA_KEEP_ALIVE,
                 "options": {"temperature": TEMPERATURE, "num_predict": max_tokens},
             },
             timeout=REQUEST_TIMEOUT_SECONDS,
@@ -151,6 +165,23 @@ Each suggestion must be one numbered item and no more than 35 words.
 Number them 1, 2, and 3."""
 
 
+def build_live_evaluation_prompt(title, description):
+    """Request scores and feedback together so live evaluation needs one call/model."""
+    return f"""You are a strict expert hackathon judge and mentor.
+Project title: {title}
+Project description: {description}
+
+Score novelty, feasibility (buildable by students in 24-48 hours), impact, and presentation from 1 to 4.
+Reply using exactly this format, with no introduction:
+SCORES: novelty;feasibility;impact;presentation
+FEEDBACK:
+1. One concise, specific improvement.
+2. One concise, specific improvement.
+3. One concise, specific improvement.
+
+Example score line: SCORES: 2;3;2;2"""
+
+
 def parse_scores(text):
     if not isinstance(text, str):
         return None
@@ -161,6 +192,17 @@ def parse_scores(text):
         return None
     scores = [float(value) for value in matches[:4]]
     return scores if all(1 <= score <= 4 for score in scores) else None
+
+
+def parse_live_evaluation(text):
+    """Return the score tuple and feedback from the compact live response."""
+    if not isinstance(text, str):
+        return None, None
+    score_match = re.search(r"SCORES\s*:\s*([^\n]+)", text, flags=re.IGNORECASE)
+    scores = parse_scores(score_match.group(1)) if score_match else parse_scores(text)
+    feedback_match = re.search(r"FEEDBACK\s*:\s*(.*)", text, flags=re.IGNORECASE | re.DOTALL)
+    feedback = feedback_match.group(1).strip() if feedback_match else ""
+    return scores, feedback
 
 
 def calculate_overall(scores):
@@ -185,6 +227,22 @@ def score_model(model_key, title, description):
         return model_key, scores, "completed"
     except Exception as error:
         return model_key, None, f"failed: {error}"
+
+
+def evaluate_live_model(model_key, title, description):
+    """Score and generate the displayed advice in one LLM round trip."""
+    try:
+        response = complete_model(
+            model_key,
+            build_live_evaluation_prompt(title, description),
+            max_tokens=LIVE_EVALUATION_MAX_TOKENS,
+        )
+        scores, feedback = parse_live_evaluation(response)
+        if scores is None:
+            raise ValueError("model did not return four valid scores in the 1-4 range")
+        return model_key, scores, feedback or "Feedback was not returned by this model."
+    except Exception as error:
+        return model_key, None, f"Scoring failed: {error}"
 
 
 def write_model_scores(dataframe, row_index, model_key, scores, status):
@@ -232,6 +290,57 @@ def calculate_metrics(dataframe, predictions, label_column="advance"):
     }
 
 
+def stratified_validation_indices(dataframe, label_column="advance"):
+    """Create a reproducible, label-stratified validation subset by idea ID."""
+    indices = []
+    for label, group in dataframe.groupby(label_column, sort=True):
+        count = max(1, round(len(group) * VALIDATION_FRACTION))
+        sampled = group.sample(n=count, random_state=VALIDATION_RANDOM_SEED + int(label))
+        indices.extend(sampled.index)
+    return pd.Index(indices)
+
+
+def choose_balanced_accuracy_threshold(dataframe, score_column, validation_indices, feasibility_column, impact_column):
+    """Choose the candidate threshold with the best validation balanced accuracy."""
+    validation = dataframe.loc[validation_indices].dropna(subset=[score_column])
+    if validation.empty:
+        raise RuntimeError(f"No valid {score_column} values are available for threshold selection.")
+
+    best_threshold, best_metrics = None, None
+    for threshold in THRESHOLD_CANDIDATES:
+        predictions = threshold_predictions(
+            validation, score_column, threshold, feasibility_column, impact_column
+        )
+        metrics = calculate_metrics(validation, predictions)
+        if best_metrics is None or metrics["balanced_accuracy"] > best_metrics["balanced_accuracy"]:
+            best_threshold, best_metrics = threshold, metrics
+    return best_threshold, best_metrics
+
+
+def threshold_predictions(dataframe, score_column, threshold, feasibility_column, impact_column):
+    overall_passes = pd.to_numeric(dataframe[score_column], errors="coerce") >= threshold
+    feasibility_passes = pd.to_numeric(dataframe[feasibility_column], errors="coerce") >= MIN_FEASIBILITY_FOR_ADVANCE
+    impact_passes = pd.to_numeric(dataframe[impact_column], errors="coerce") >= MIN_IMPACT_FOR_ADVANCE
+    return (overall_passes & feasibility_passes & impact_passes).fillna(False).astype(int)
+
+
+def add_error_analysis(dataframe):
+    actual = dataframe["advance"].astype(int)
+    predicted = dataframe["ai_advance"].astype(int)
+    dataframe["decision_error_type"] = "Correct"
+    dataframe.loc[(predicted == 1) & (actual == 0), "decision_error_type"] = "False positive"
+    dataframe.loc[(predicted == 0) & (actual == 1), "decision_error_type"] = "False negative"
+    dataframe["decision_error_analysis"] = ""
+    errors = dataframe["decision_error_type"] != "Correct"
+    dataframe.loc[errors, "decision_error_analysis"] = dataframe.loc[errors].apply(
+        lambda row: (
+            f"{row['decision_error_type']}: AI overall score={row['avg_overall']:.2f}; "
+            f"threshold={row['decision_threshold']:.2f}. Review criterion scores, category, and expert rationale."
+        ),
+        axis=1,
+    )
+
+
 def save_results(dataframe):
     try:
         dataframe.to_excel(OUTPUT_FILE, index=False)
@@ -263,6 +372,12 @@ def score_all_ideas():
         raise ValueError("ENSEMBLE_METHOD must be either 'mean' or 'median'.")
     if CHECKPOINT_EVERY < 1:
         raise ValueError("CHECKPOINT_EVERY must be at least 1.")
+    if not 0 < VALIDATION_FRACTION < 1:
+        raise ValueError("VALIDATION_FRACTION must be between 0 and 1.")
+    if not THRESHOLD_CANDIDATES:
+        raise ValueError("DECISION_THRESHOLDS must contain at least one numeric threshold.")
+    if not 1 <= MIN_FEASIBILITY_FOR_ADVANCE <= 4 or not 1 <= MIN_IMPACT_FOR_ADVANCE <= 4:
+        raise ValueError("Minimum feasibility and impact thresholds must be between 1 and 4.")
 
     # Keep migrated exports free of columns from the former hosted-model setup.
     legacy_columns = [
@@ -294,24 +409,50 @@ def score_all_ideas():
 
     score_columns = [f"{key}_overall" for key in MODEL_CONFIGS]
     dataframe[score_columns] = dataframe[score_columns].apply(pd.to_numeric, errors="coerce")
+    criterion_score_columns = [
+        f"{model_key}_{criterion}"
+        for model_key in MODEL_CONFIGS
+        for criterion in MODEL_WEIGHTS
+    ]
+    dataframe[criterion_score_columns] = dataframe[criterion_score_columns].apply(
+        pd.to_numeric, errors="coerce"
+    )
     if ENSEMBLE_METHOD == "median":
         dataframe["avg_overall"] = dataframe[score_columns].median(axis=1).round(2)
     else:
         dataframe["avg_overall"] = dataframe[score_columns].mean(axis=1).round(2)
+    for criterion in MODEL_WEIGHTS:
+        criterion_columns = [f"{key}_{criterion}" for key in MODEL_CONFIGS]
+        if ENSEMBLE_METHOD == "median":
+            dataframe[f"avg_{criterion}"] = dataframe[criterion_columns].median(axis=1).round(2)
+        else:
+            dataframe[f"avg_{criterion}"] = dataframe[criterion_columns].mean(axis=1).round(2)
     dataframe["score_spread"] = (dataframe[score_columns].max(axis=1) - dataframe[score_columns].min(axis=1)).round(2)
     dataframe["human_review_required"] = ((dataframe[score_columns].notna().sum(axis=1) < len(MODEL_CONFIGS)) | (dataframe["score_spread"] >= HUMAN_REVIEW_SPREAD_THRESHOLD)).astype(int)
     for model_key in MODEL_CONFIGS:
         assign_stable_ranks(dataframe, f"{model_key}_overall", f"{model_key}_rank")
     assign_stable_ranks(dataframe, "avg_overall", "final_rank")
 
-    finalists_to_select = int(dataframe["advance"].sum())
-    final_indices = select_top_k(dataframe, "avg_overall", finalists_to_select)
-    dataframe["ai_advance"] = 0
-    dataframe.loc[final_indices, "ai_advance"] = 1
+    validation_indices = stratified_validation_indices(dataframe)
+    dataframe["evaluation_split"] = "test"
+    dataframe.loc[validation_indices, "evaluation_split"] = "validation"
+    ensemble_threshold, validation_metrics = choose_balanced_accuracy_threshold(
+        dataframe, "avg_overall", validation_indices, "avg_feasibility", "avg_impact"
+    )
+    dataframe["decision_threshold"] = ensemble_threshold
+    dataframe["ai_advance"] = threshold_predictions(
+        dataframe, "avg_overall", ensemble_threshold, "avg_feasibility", "avg_impact"
+    )
+    final_indices = dataframe.index[dataframe["ai_advance"] == 1]
     dataframe["agrees_with_expert"] = (dataframe["ai_advance"] == dataframe["advance"].astype(int)).astype(int)
+    add_error_analysis(dataframe)
 
     feedback_keys = list(MODEL_CONFIGS) if FEEDBACK_MODE == "per_model" else [FEEDBACK_MODEL_KEY]
-    print(f"Generating {FEEDBACK_MODE} feedback for {finalists_to_select} finalists using: {', '.join(feedback_keys)}")
+    print(
+        f"Selected {len(final_indices)} finalists using threshold {ensemble_threshold:.2f} "
+        f"(validation balanced accuracy {validation_metrics['balanced_accuracy']:.1f}%)."
+    )
+    print(f"Generating {FEEDBACK_MODE} feedback for {len(final_indices)} finalists using: {', '.join(feedback_keys)}")
     for row_index in final_indices:
         row = dataframe.loc[row_index]
         with ThreadPoolExecutor(max_workers=len(MODEL_CONFIGS)) as executor:
@@ -344,8 +485,22 @@ def score_all_ideas():
 
     metrics_by_model = {}
     for model_key in MODEL_CONFIGS:
-        predictions = pd.Series(0, index=dataframe.index)
-        predictions.loc[select_top_k(dataframe, f"{model_key}_overall", finalists_to_select, allow_shortfall=True)] = 1
+        model_threshold, _ = choose_balanced_accuracy_threshold(
+            dataframe,
+            f"{model_key}_overall",
+            validation_indices,
+            f"{model_key}_feasibility",
+            f"{model_key}_impact",
+        )
+        dataframe[f"{model_key}_decision_threshold"] = model_threshold
+        predictions = threshold_predictions(
+            dataframe,
+            f"{model_key}_overall",
+            model_threshold,
+            f"{model_key}_feasibility",
+            f"{model_key}_impact",
+        )
+        dataframe[f"{model_key}_ai_advance"] = predictions
         metrics_by_model[model_key] = calculate_metrics(dataframe, predictions)
     metrics_by_model["combined"] = calculate_metrics(dataframe, dataframe["ai_advance"])
     for model_key, metrics in metrics_by_model.items():
