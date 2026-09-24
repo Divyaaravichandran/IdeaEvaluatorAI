@@ -20,7 +20,7 @@ from scorer import (
 st.set_page_config(page_title="AIEval - AI Evaluation Dashboard", page_icon="✦", layout="wide", initial_sidebar_state="collapsed")
 
 
-background_image = Path(__file__).with_name("Bgpic.png")
+background_image = Path(__file__).with_name("bgpic.png")
 try:
     background_data_uri = "data:image/png;base64," + base64.b64encode(background_image.read_bytes()).decode("ascii")
 except OSError:
@@ -61,7 +61,7 @@ def load_metrics(data):
         for name, column in model_predictions.items()
     }
     counts = data["category"].fillna("Others").astype(str).value_counts()
-    categories = {name: round(count / len(data) * 100, 1) for name, count in counts.head(3).items()}
+    categories = {name: round(count / len(data) * 100, 1) for name, count in counts.head(6).items()}
     categories["Others"] = round(max(0, 100 - sum(categories.values())), 1)
     return {
         "ideas": len(data),
@@ -397,6 +397,7 @@ html, body, [data-testid="stAppViewContainer"] { font-family:'DM Sans',sans-seri
 .st-key-home_page .st-key-home_accuracy_card, .st-key-home_page .st-key-home_category_card { min-height:342px; padding:22px 24px; border:1px solid rgba(225,229,243,.95); border-radius:18px; background:rgba(255,255,255,.88); box-shadow:0 14px 32px rgba(76,91,157,.08); }
 .st-key-home_page .st-key-home_accuracy_card .section-title, .st-key-home_page .st-key-home_category_card .section-title { margin:0 0 8px; }.st-key-home_page .st-key-home_accuracy_card .section-title h2, .st-key-home_page .st-key-home_category_card .section-title h2 { font-size:18px; }
 .st-key-home_page .comparison-grid { gap:16px; }.st-key-home_page .comparison-card { min-height:218px; padding:25px; border-color:rgba(225,229,243,.95); background:rgba(255,255,255,.88); box-shadow:0 12px 28px rgba(76,91,157,.08); }.st-key-home_page .comparison-card.featured { border-color:#9baeff; background:linear-gradient(145deg,#f0f3ff,#fdfdff); }
+.st-key-home_page .comparison-card { padding:28px 32px 28px 76px; overflow:visible; }.st-key-home_page .comparison-card h3 { margin-bottom:16px; font-size:20px; white-space:normal; }.st-key-home_page .comparison-card li { font-size:14px; line-height:2; }
 
 .st-key-model_comparison_page .comparison-hero, .st-key-detail_page .comparison-hero, .st-key-live_page .comparison-hero { padding:30px 0 26px; border-bottom:1px solid rgba(225,229,243,.9); }
 .st-key-model_comparison_page .comparison-section { margin-top:30px; padding-top:28px; }.st-key-model_comparison_page .comparison-table-card { padding:10px; border-radius:18px; background:rgba(255,255,255,.9); }.st-key-model_comparison_page .explain-card { min-height:126px; padding:22px; border-radius:16px; background:rgba(255,255,255,.86); border-color:rgba(225,229,243,.95); }.st-key-model_comparison_page .explain-card:hover { border-color:#b9b1ff; }.st-key-model_comparison_page .comparison-section-subtitle { max-width:620px; line-height:1.55; }
@@ -450,13 +451,13 @@ def _home_page_content():
             st.markdown('<div class="section-title"><h2>Model accuracy</h2></div>', unsafe_allow_html=True)
             figure = go.Figure(go.Bar(x=list(metrics["models"]), y=list(metrics["models"].values()), marker_color=["#2457d9", "#2479ee", "#18b9a4"], text=[f"{value}%" for value in metrics["models"].values()], textposition="outside"))
             figure.update_layout(height=270, margin=dict(l=8, r=8, t=20, b=30), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis=dict(range=[0, 100], ticksuffix="%", gridcolor="rgba(84,109,170,.16)"), showlegend=False)
-            st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
     with right:
         with st.container(key="home_category_card"):
             st.markdown('<div class="section-title"><h2>Ideas by category</h2></div>', unsafe_allow_html=True)
             figure = go.Figure(go.Pie(labels=list(metrics["categories"]), values=list(metrics["categories"].values()), hole=.66, marker=dict(colors=["#08b879", "#26a9cf", "#2f68f0", "#8b4de8"], line=dict(color="#ffffff", width=2)), textinfo="none", domain=dict(x=[0, .62])))
             figure.update_layout(height=270, margin=dict(l=0, r=0, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="v", x=.60, y=.5, xanchor="left", font=dict(size=10, color="#304263")))
-            st.plotly_chart(figure, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
     st.markdown('<div class="section-title"><h1>Innovation Benchmarking</h1><p><b>How the system improves on earlier evaluation approaches.</b></p></div>', unsafe_allow_html=True)
     comparisons = [
         ("Base Paper", ["GPT-3.5 only", "Climate change domain", "No feedback", "70–80% accuracy"], ""),
@@ -523,7 +524,7 @@ def _leaderboard_page_content():
             st.markdown('<div style="height:10px"></div>', unsafe_allow_html=True)
             button_left, button_center, button_right = st.columns([1, 1.3, 1])
             with button_center:
-                if st.button("View idea", key=f"podium_{idea['idea_id']}", type="secondary", use_container_width=True):
+                if st.button("View idea", key=f"podium_{idea['idea_id']}", type="secondary", width="stretch"):
                     st.session_state.detail_idea_id = int(idea["idea_id"])
                     go_to("detail")
 
@@ -650,13 +651,13 @@ def _model_comparison_page_content():
         fig.update_layout(barmode="group", yaxis=dict(range=[0,100],ticksuffix="%"), height=330, margin=dict(l=10,r=10,t=12,b=20), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="h"))
         with st.container(key="comparison_chart_left"):
             st.markdown('<h3>Balanced vs Plain Accuracy per Model</h3><p class="subtle-note">Higher is better against the 70–80% validation band.</p>', unsafe_allow_html=True)
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+            st.plotly_chart(fig, width="stretch", config={"displayModeBar":False})
     with right:
         fig = go.Figure([go.Bar(name=key, x=frame.Model, y=frame[key], marker_color=color) for key,color in (("TP","#08b879"),("TN","#4a8ed8"),("FP","#e5a34b"),("FN","#df5656"))])
         fig.update_layout(barmode="group", height=330, margin=dict(l=10,r=10,t=12,b=20), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="h"))
         with st.container(key="comparison_chart_right"):
             st.markdown('<h3>TP vs TN vs FP vs FN per Model</h3><p class="subtle-note">Decision outcomes across the full dataset.</p>', unsafe_allow_html=True)
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+            st.plotly_chart(fig, width="stretch", config={"displayModeBar":False})
     st.markdown('</section>', unsafe_allow_html=True)
     st.markdown('<section class="comparison-section hidden-rank-comparison"><h2 class="comparison-section-title">AI Rank vs Expert Rank</h2><p class="comparison-section-subtitle">Closer to the diagonal means stronger agreement. Drag to pan or scroll to zoom.</p>', unsafe_allow_html=True)
     rank_data = data[["title", "expert_rank", "final_rank"]].copy()
@@ -668,7 +669,7 @@ def _model_comparison_page_content():
     scatter.add_trace(go.Scatter(x=[1,max_rank], y=[1,max_rank], mode="lines", line=dict(color="#df5656", dash="dot"), name="Perfect agreement"))
     scatter.update_layout(height=390, margin=dict(l=10,r=10,t=10,b=25), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(255,255,255,.55)", xaxis_title="Expert Rank", yaxis_title="AI Final Rank", legend=dict(orientation="h"))
     with st.container(key="scatter_plot"):
-        st.plotly_chart(scatter, use_container_width=True, config={"scrollZoom":True, "displayModeBar":True})
+        st.plotly_chart(scatter, width="stretch", config={"scrollZoom":True, "displayModeBar":True})
 
 
 def model_comparison_page():
@@ -719,10 +720,10 @@ def _detail_page_content():
     left, right = st.columns(2, gap="medium")
     with left:
         with st.container(key="detail_radar"):
-            st.markdown('<h3 class="detail-card-title">Model Evaluation Breakdown</h3>', unsafe_allow_html=True); st.plotly_chart(radar, use_container_width=True, config={"displayModeBar":False})
+            st.markdown('<h3 class="detail-card-title">Model Evaluation Breakdown</h3>', unsafe_allow_html=True); st.plotly_chart(radar, width="stretch", config={"displayModeBar":False})
     with right:
         with st.container(key="detail_bars"):
-            st.markdown('<h3 class="detail-card-title">Criteria Score Comparison</h3>', unsafe_allow_html=True); st.plotly_chart(bars, use_container_width=True, config={"displayModeBar":False})
+            st.markdown('<h3 class="detail-card-title">Criteria Score Comparison</h3>', unsafe_allow_html=True); st.plotly_chart(bars, width="stretch", config={"displayModeBar":False})
     st.markdown('</section>', unsafe_allow_html=True)
     scores = [(name, float(item[f"{key}_overall"])) for name, key in model_info]
     scores.append(("Average", sum(value for _, value in scores) / len(scores)))
@@ -741,7 +742,7 @@ def _live_page_content():
         st.caption("Include the problem, intended users, solution, and expected impact for the most useful review.")
         title = st.text_input("Project Title", placeholder="e.g. MediScan AI")
         description = st.text_area("Project Description", placeholder="Describe your idea in 3-5 sentences...", height=170)
-        evaluate_clicked = st.button("Evaluate This Idea", type="primary", use_container_width=True)
+        evaluate_clicked = st.button("Evaluate This Idea", type="primary", width="stretch")
     if evaluate_clicked:
         if not title.strip() or not description.strip():
             st.warning("Please enter both a project title and description before evaluating.")
@@ -794,7 +795,7 @@ def _live_page_content():
                 "Average": round(sum(values.values()) / len(values), 2),
             })
         st.markdown('<div class="section-title"><h2>Criteria Breakdown</h2></div>', unsafe_allow_html=True)
-        st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
         for row in rows:
             st.progress(row["Average"] / 4, text=f'{row["Criterion"]}: {row["Average"]:.2f} / 4.0')
 
