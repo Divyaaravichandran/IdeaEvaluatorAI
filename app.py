@@ -352,6 +352,24 @@ html, body, [data-testid="stAppViewContainer"] { font-family:'DM Sans',sans-seri
 .leaderboard-table th { padding:14px 12px; background:#f3f4fb; color:#111b35; text-align:left; font-size:11px; font-weight:800; letter-spacing:.5px; }
 .leaderboard-table td { padding:13px 12px; border-top:1px solid #edf0f5; color:#526486; font-size:12px; }
 .leaderboard-table tbody tr:hover { background:#f8f7ff; }
+.leaderboard-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:0 0 26px; }
+.leaderboard-summary article { padding:15px 17px; background:rgba(255,255,255,.78); border:1px solid rgba(225,229,243,.95); border-radius:12px; }
+.leaderboard-summary small { display:block; color:#71809a; font-size:10px; font-weight:800; letter-spacing:.8px; }
+.leaderboard-summary strong { display:block; margin-top:5px; color:#15233b; font-size:22px; }
+.leaderboard-toolbar { display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 12px; }
+.leaderboard-toolbar h2 { margin:0; color:#15233b; font-size:21px; }
+.leaderboard-toolbar p { margin:3px 0 0; color:#71809a; font-size:12px; }
+.rank-pill, .decision-pill, .review-pill, .category-pill { display:inline-flex; align-items:center; white-space:nowrap; border-radius:999px; font-size:11px; font-weight:750; }
+.rank-pill { min-width:31px; justify-content:center; padding:5px 8px; background:#efedff; color:#5545c7; }
+.decision-pill { padding:5px 9px; background:#def7eb; color:#087f59; }
+.decision-pill.reject { background:#fff0ef; color:#bc3d37; }
+.review-pill { padding:5px 9px; background:#fff4d6; color:#966300; }
+.category-pill { padding:5px 9px; background:#f1f4fb; color:#526486; }
+.idea-cell { min-width:220px; color:#15233b; font-weight:700; }
+.idea-cell small { display:block; margin-top:3px; color:#71809a; font-size:11px; font-weight:500; }
+.score-value { color:#15233b; font-variant-numeric:tabular-nums; font-weight:700; }
+.score-muted { color:#9aa6ba; }
+@media (max-width:600px) { .leaderboard-summary { grid-template-columns:1fr; } .leaderboard-toolbar { align-items:flex-start; flex-direction:column; } }
 @media (max-width:600px) { .st-key-model_comparison_page .comparison-hero, .st-key-detail_page .comparison-hero, .st-key-live_page .comparison-hero { padding-top:0; } .st-key-model_comparison_page .metric { padding-left:68px; } .st-key-model_comparison_page .metric::before { left:12px; width:38px; height:38px; } }
 
 /* Strong, high-contrast heading hierarchy. */
@@ -365,6 +383,29 @@ html, body, [data-testid="stAppViewContainer"] { font-family:'DM Sans',sans-seri
 .comparison-table th { font-weight:800; }
 .st-key-home_page .section-title h1, .st-key-home_page .section-title h2,
 .st-key-leaderboard_page .section-title h2 { text-shadow:0 1px 0 rgba(255,255,255,.7); }
+
+/* Page-specific UI refinements. The leaderboard keeps its independent table system. */
+.st-key-home_page .hero { margin:8px 0 24px; padding:82px 42px 74px; overflow:hidden; border:1px solid rgba(169,195,255,.7); border-radius:24px; background:radial-gradient(circle at 84% 14%,rgba(103,64,229,.2),transparent 27%),linear-gradient(135deg,#f9fbff,#eef2ff 55%,#f9fbff); text-align:left; }
+.st-key-home_page .hero h1 { max-width:780px; margin:22px 0 14px; color:#15233b; font-size:clamp(34px,4.2vw,56px); line-height:1.06; }
+.st-key-home_page .hero p { max-width:570px; margin:0; color:#526486; font-size:16px; }
+.st-key-home_page .metrics { margin:0 0 34px; }
+.st-key-home_page .metric { position:relative; overflow:hidden; padding:21px 18px 18px 76px; border-color:rgba(225,229,243,.95); background:rgba(255,255,255,.92); box-shadow:0 12px 28px rgba(76,91,157,.09); }
+.st-key-home_page .metric::before { position:absolute; left:17px; top:20px; width:42px; height:42px; display:grid; place-items:center; border-radius:13px; background:#edf1ff; color:#3156c8; content:'01'; font-size:11px; font-weight:800; }
+.st-key-home_page .metric:nth-child(2)::before { content:'02'; background:#eeeaff; color:#6b45d6; }.st-key-home_page .metric:nth-child(3)::before { content:'03'; background:#e2f8f0; color:#087f59; }.st-key-home_page .metric:nth-child(4)::before { content:'04'; background:#fff2dc; color:#b76a00; }
+.st-key-home_page .metric strong { color:#15233b; }.st-key-home_page .metric span { color:#71809a; }
+.st-key-home_page .section-title { margin:44px 0 18px; text-align:left; }.st-key-home_page .section-title h1, .st-key-home_page .section-title h2 { color:#15233b; }
+.st-key-home_page .st-key-home_accuracy_card, .st-key-home_page .st-key-home_category_card { min-height:342px; padding:22px 24px; border:1px solid rgba(225,229,243,.95); border-radius:18px; background:rgba(255,255,255,.88); box-shadow:0 14px 32px rgba(76,91,157,.08); }
+.st-key-home_page .st-key-home_accuracy_card .section-title, .st-key-home_page .st-key-home_category_card .section-title { margin:0 0 8px; }.st-key-home_page .st-key-home_accuracy_card .section-title h2, .st-key-home_page .st-key-home_category_card .section-title h2 { font-size:18px; }
+.st-key-home_page .comparison-grid { gap:16px; }.st-key-home_page .comparison-card { min-height:218px; padding:25px; border-color:rgba(225,229,243,.95); background:rgba(255,255,255,.88); box-shadow:0 12px 28px rgba(76,91,157,.08); }.st-key-home_page .comparison-card.featured { border-color:#9baeff; background:linear-gradient(145deg,#f0f3ff,#fdfdff); }
+
+.st-key-model_comparison_page .comparison-hero, .st-key-detail_page .comparison-hero, .st-key-live_page .comparison-hero { padding:30px 0 26px; border-bottom:1px solid rgba(225,229,243,.9); }
+.st-key-model_comparison_page .comparison-section { margin-top:30px; padding-top:28px; }.st-key-model_comparison_page .comparison-table-card { padding:10px; border-radius:18px; background:rgba(255,255,255,.9); }.st-key-model_comparison_page .explain-card { min-height:126px; padding:22px; border-radius:16px; background:rgba(255,255,255,.86); border-color:rgba(225,229,243,.95); }.st-key-model_comparison_page .explain-card:hover { border-color:#b9b1ff; }.st-key-model_comparison_page .comparison-section-subtitle { max-width:620px; line-height:1.55; }
+
+.st-key-detail_page .detail-selector { margin:24px 0 8px; padding:18px 20px; border-radius:16px; border-color:rgba(225,229,243,.95); box-shadow:0 12px 26px rgba(76,91,157,.08); }.st-key-detail_page .idea-header-grid { gap:12px; }.st-key-detail_page .idea-info { min-height:96px; padding:17px; border-color:rgba(225,229,243,.95); border-radius:14px; box-shadow:0 8px 18px rgba(76,91,157,.05); }.st-key-detail_page .idea-info strong { color:#15233b; font-size:17px; }.st-key-detail_page .idea-description { border-radius:16px; border-color:rgba(225,229,243,.95); background:rgba(255,255,255,.9); }.st-key-detail_page .comparison-section { margin-top:30px; padding-top:26px; }.st-key-detail_page .score-card { height:132px; border-color:rgba(225,229,243,.95); border-radius:16px; box-shadow:0 10px 22px rgba(76,91,157,.07); }
+
+.st-key-live_form { margin:24px 0 30px; padding:24px; border:1px solid rgba(225,229,243,.95); border-radius:18px; background:rgba(255,255,255,.9); box-shadow:0 14px 32px rgba(76,91,157,.08); }.st-key-live_form label { color:#15233b!important; font-size:13px!important; font-weight:750!important; }.st-key-live_form input, .st-key-live_form textarea { border-radius:10px!important; border-color:#dce2f0!important; background:#fbfcff!important; }.st-key-live_form textarea { line-height:1.55; }.st-key-live_form .stButton > button { min-height:46px; border-radius:10px; font-weight:750; }
+.st-key-live_page .section-title { margin:34px 0 16px; text-align:left; }.st-key-live_page .section-title h2 { color:#15233b; font-size:22px; }.st-key-live_page [data-testid="stMetric"] { min-height:108px; padding:17px; border:1px solid rgba(225,229,243,.95); border-radius:14px; background:rgba(255,255,255,.9); box-shadow:0 9px 20px rgba(76,91,157,.06); }.st-key-live_page [data-testid="stMetricLabel"] { color:#64718a; font-size:11px; }.st-key-live_page [data-testid="stMetricValue"] { color:#15233b; font-size:24px; }.st-key-live_page [data-testid="stDataFrame"] { border:1px solid rgba(225,229,243,.95); border-radius:14px; overflow:hidden; }.st-key-live_page .stProgress { margin:10px 0; }.st-key-live_feedback, [class*="st-key-live_feedback_"] { min-height:186px; padding:20px; border:1px solid rgba(225,229,243,.95); border-radius:16px; background:rgba(255,255,255,.88); box-shadow:0 10px 22px rgba(76,91,157,.06); }.st-key-live_feedback h4, [class*="st-key-live_feedback_"] h4 { color:#3156c8; font-size:13px; }.st-key-live_feedback p, .st-key-live_feedback li, [class*="st-key-live_feedback_"] p, [class*="st-key-live_feedback_"] li { color:#526486; line-height:1.6; }
+@media (max-width:700px) { .st-key-home_page .hero { padding:50px 24px; border-radius:18px; }.st-key-home_page .metric { padding-left:70px; }.st-key-home_accuracy_card, .st-key-home_category_card { min-height:0; padding:18px; }.st-key-live_form { padding:18px; }.st-key-detail_page .idea-header-grid { grid-template-columns:1fr; } }
 </style>
 """.replace("__BACKGROUND_IMAGE__", background_data_uri), unsafe_allow_html=True)
 
@@ -443,20 +484,36 @@ def _leaderboard_page_content():
         st.session_state.focus_leaderboard_table = True
 
     with st.container(key="leaderboard_filters"):
-        search, category, decision = st.columns([2, 1, 1])
+        search, category, decision, sort = st.columns([2.1, 1, 1.25, 1.2])
         query = search.text_input("Search idea by title...", key="idea_search", label_visibility="collapsed", placeholder="Search idea by title...", on_change=focus_table)
         category_value = category.selectbox("Category", ["All", *sorted(data["category"].dropna().unique())], key="idea_category", label_visibility="collapsed", on_change=focus_table)
         decision_value = decision.selectbox("Decision", ["Show All", "Show Advanced Only", "Show Rejected Only"], key="idea_decision", label_visibility="collapsed", on_change=focus_table)
-    filtered = data[data["title"].str.contains(query, case=False, na=False)]
+        sort_value = sort.selectbox("Sort", ["AI Rank", "Highest score", "Lowest score"], key="idea_sort", label_visibility="collapsed", on_change=focus_table)
+    filtered = data[data["title"].str.contains(query, case=False, na=False)].copy()
     if category_value != "All":
         filtered = filtered[filtered["category"] == category_value]
     if decision_value == "Show Advanced Only":
         filtered = filtered[filtered["ai_advance"] == 1]
     elif decision_value == "Show Rejected Only":
         filtered = filtered[filtered["ai_advance"] == 0]
+    if sort_value == "Highest score":
+        filtered = filtered.sort_values(["avg_overall", "ai_rank"], ascending=[False, True])
+    elif sort_value == "Lowest score":
+        filtered = filtered.sort_values(["avg_overall", "ai_rank"], ascending=[True, True])
+
+    advanced_count = int(pd.to_numeric(filtered["ai_advance"], errors="coerce").fillna(0).sum())
+    review_count = int(pd.to_numeric(filtered["human_review_required"], errors="coerce").fillna(0).sum())
+    st.markdown(
+        '<section class="leaderboard-summary">'
+        f'<article><small>MATCHING IDEAS</small><strong>{len(filtered)}</strong></article>'
+        f'<article><small>ADVANCE RECOMMENDATIONS</small><strong>{advanced_count}</strong></article>'
+        f'<article><small>NEEDS HUMAN REVIEW</small><strong>{review_count}</strong></article>'
+        '</section>',
+        unsafe_allow_html=True,
+    )
 
     st.markdown('<div class="section-title"><h2>Top ideas</h2></div>', unsafe_allow_html=True)
-    podium = data.nsmallest(3, "ai_rank")
+    podium = filtered.nsmallest(3, "ai_rank")
     podium_columns = st.columns(3)
     medals = ["🥇", "🥈", "🥉"]
     for column, medal, (_, idea) in zip(podium_columns, medals, podium.iterrows()):
@@ -470,25 +527,48 @@ def _leaderboard_page_content():
                     st.session_state.detail_idea_id = int(idea["idea_id"])
                     go_to("detail")
 
-    st.markdown('<div style="height:42px"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:34px"></div>', unsafe_allow_html=True)
 
     st.markdown('<div id="leaderboard-table"></div>', unsafe_allow_html=True)
     if st.session_state.pop("focus_leaderboard_table", False):
         components.html("<script>window.parent.document.getElementById('leaderboard-table')?.scrollIntoView({behavior:'smooth', block:'start'});</script>", height=0)
-    display = pd.DataFrame({
-        "AI Rank": filtered["ai_rank"], "Idea Title": filtered["title"], "Category": filtered["category"],
-        "Qwen3 Score (out of 4)": filtered["qwen_overall"], "Mistral Score (out of 4)": filtered["mistral_overall"],
-        "Llama Score (out of 4)": filtered["llama_overall"], "Average Score (out of 4)": filtered["avg_overall"],
-        "Expert Rank": filtered["expert_rank"],
-    })
-    headers = ''.join(f'<th>{html.escape(str(column))}</th>' for column in display.columns)
-    body = ''.join(
-        '<tr>' + ''.join(
-            f'<td>{html.escape(f"{value:.2f}" if isinstance(value, float) else str(value))}</td>'
-            for value in row
-        ) + '</tr>'
-        for row in display.itertuples(index=False, name=None)
+    page_size = st.selectbox("Rows per page", ["All", 10, 25, 50], index=2, key="leaderboard_page_size")
+    visible = filtered if page_size == "All" else filtered.head(page_size)
+    st.markdown(
+        f'<div class="leaderboard-toolbar"><div><h2>Ranked ideas</h2>'
+        f'<p>Showing {len(visible)} of {len(filtered)} matching ideas.</p></div></div>',
+        unsafe_allow_html=True,
     )
+    headers = ''.join(f'<th>{label}</th>' for label in ("Rank", "Idea", "Category", "Decision", "Average", "Range", "Qwen", "Mistral", "Llama", "Expert"))
+
+    def score_cell(value):
+        value = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+        return '<span class="score-muted">—</span>' if pd.isna(value) else f'<span class="score-value">{value:.2f}</span>'
+
+    def table_row(idea):
+        rank = '—' if pd.isna(idea["ai_rank"]) else str(int(idea["ai_rank"]))
+        category_value = idea.get("category")
+        category_name = html.escape("Uncategorised" if pd.isna(category_value) else str(category_value))
+        title = html.escape(str(idea["title"]))
+        decision = int(pd.to_numeric(pd.Series([idea["ai_advance"]]), errors="coerce").fillna(0).iloc[0])
+        decision_html = '<span class="decision-pill">Advance</span>' if decision else '<span class="decision-pill reject">Reject</span>'
+        review = int(pd.to_numeric(pd.Series([idea["human_review_required"]]), errors="coerce").fillna(0).iloc[0])
+        review_html = '<small><span class="review-pill">Review</span></small>' if review else ''
+        expert = '—' if pd.isna(idea["expert_rank"]) else f'#{int(idea["expert_rank"])}'
+        return (
+            '<tr>'
+            f'<td><span class="rank-pill">{rank}</span></td>'
+            f'<td class="idea-cell">{title}{review_html}</td>'
+            f'<td><span class="category-pill">{category_name}</span></td>'
+            f'<td>{decision_html}</td><td>{score_cell(idea["avg_overall"])}</td>'
+            f'<td>{score_cell(idea["score_spread"])}</td><td>{score_cell(idea["qwen_overall"])}</td>'
+            f'<td>{score_cell(idea["mistral_overall"])}</td><td>{score_cell(idea["llama_overall"])}</td><td>{expert}</td>'
+            '</tr>'
+        )
+
+    body = ''.join(table_row(idea) for _, idea in visible.iterrows())
+    if not body:
+        body = '<tr><td colspan="10">No ideas match the current filters.</td></tr>'
     st.markdown(
         f'<div class="leaderboard-table-wrap"><table class="leaderboard-table"><thead><tr>{headers}</tr></thead><tbody>{body}</tbody></table></div>',
         unsafe_allow_html=True,
@@ -505,28 +585,23 @@ def _leaderboard_page_content():
     if flagged.empty:
         st.info("No flagged ideas match the current filters.")
     else:
-        flagged_display = pd.DataFrame({
-            "AI Rank": flagged["ai_rank"],
-            "Idea Title": flagged["title"],
-            "Category": flagged["category"],
-            "Average Score (out of 4)": flagged["avg_overall"],
-            "Score Difference": flagged["score_spread"],
-        })
-        flagged_headers = ''.join(f'<th>{html.escape(str(column))}</th>' for column in flagged_display.columns)
-        flagged_body = ''.join(
-            '<tr>' + ''.join(
-                f'<td>{html.escape(f"{value:.2f}" if isinstance(value, float) else str(value))}</td>'
-                for value in row
-            ) + '</tr>'
-            for row in flagged_display.itertuples(index=False, name=None)
+        flagged_page_size = st.selectbox(
+            "Flagged rows per page", ["All", 10, 25, 50], index=1, key="flagged_page_size"
         )
+        visible_flagged = flagged if flagged_page_size == "All" else flagged.head(flagged_page_size)
         st.markdown(
-            f'<div class="leaderboard-table-wrap"><table class="leaderboard-table"><thead><tr>{flagged_headers}</tr></thead><tbody>{flagged_body}</tbody></table></div>',
+            f'<div class="leaderboard-toolbar"><div><h2>Review queue</h2>'
+            f'<p>Showing {len(visible_flagged)} of {len(flagged)} ideas that need a closer look.</p></div></div>',
+            unsafe_allow_html=True,
+        )
+        flagged_body = ''.join(table_row(idea) for _, idea in visible_flagged.iterrows())
+        st.markdown(
+            f'<div class="leaderboard-table-wrap"><table class="leaderboard-table"><thead><tr>{headers}</tr></thead><tbody>{flagged_body}</tbody></table></div>',
             unsafe_allow_html=True,
         )
 
     st.markdown('<div class="section-title"><h2>Feedback for top 10 ideas</h2></div>', unsafe_allow_html=True)
-    for _, idea in data.nsmallest(10, "ai_rank").iterrows():
+    for _, idea in filtered.nsmallest(10, "ai_rank").iterrows():
         feedback = idea.get("combined_feedback") or idea.get("llama_feedback") or "Feedback was not generated for this idea."
         with st.expander(f'#{int(idea["ai_rank"])} · {idea["title"]}'):
             st.write(feedback)
@@ -552,9 +627,9 @@ def _model_comparison_page_content():
         plain = round((tp + tn) / len(data) * 100, 1) if len(data) else 0
         rows.append((name, balanced, plain, tp, tn, fp, fn))
         chart_rows.append({"Model": name, "Balanced Accuracy": balanced, "Plain Accuracy": plain, "TP": tp, "TN": tn, "FP": fp, "FN": fn})
-    best_name = max(rows, key=lambda row: row[1])[0]
+    best_name = max(rows, key=lambda row: row[2])[0]
     st.markdown('<section class="comparison-hero"><div class="badge">RESEARCH VALIDATION</div><h1>Model Comparison</h1><p>Transparent performance analysis across every scored idea in the evaluation dataset.</p></section>', unsafe_allow_html=True)
-    st.markdown(f'<section class="metrics" style="margin-top:32px"><article class="metric"><small>BEST MODEL</small><strong>{best_name}</strong><span>Highest balanced accuracy</span></article><article class="metric"><small>IDEAS EVALUATED</small><strong>{len(data)}</strong><span>Loaded from dataset</span></article><article class="metric"><small>LOWER BENCHMARK</small><strong>70%</strong><span>Minimum acceptable accuracy</span></article><article class="metric"><small>UPPER BENCHMARK</small><strong>80%</strong><span>Strong validation target</span></article></section>', unsafe_allow_html=True)
+    st.markdown(f'<section class="metrics" style="margin-top:32px"><article class="metric"><small>BEST MODEL</small><strong>{best_name}</strong><span>Highest accuracy</span></article><article class="metric"><small>IDEAS EVALUATED</small><strong>{len(data)}</strong><span>Loaded from dataset</span></article><article class="metric"><small>LOWER BENCHMARK</small><strong>70%</strong><span>Minimum acceptable accuracy</span></article><article class="metric"><small>UPPER BENCHMARK</small><strong>80%</strong><span>Strong validation target</span></article></section>', unsafe_allow_html=True)
     def level(value): return "metric-good" if value >= 80 else "metric-warn" if value >= 70 else "metric-bad"
     def accuracy_cell(value):
         color = "#08b879" if value >= 80 else "#e3b341" if value >= 70 else "#e05252"
@@ -662,14 +737,17 @@ def detail_page():
 
 def _live_page_content():
     st.markdown('<section class="comparison-hero"><div class="badge">LIVE EVALUATION</div><h1>Live Evaluation Studio</h1><p>Evaluate a hackathon idea with the AI review panel.</p></section>', unsafe_allow_html=True)
-    title = st.text_input("Project Title", placeholder="e.g. MediScan AI")
-    description = st.text_area("Project Description", placeholder="Describe your idea in 3-5 sentences...", height=170)
-    if st.button("Evaluate This Idea", type="primary", use_container_width=True):
+    with st.container(key="live_form"):
+        st.caption("Include the problem, intended users, solution, and expected impact for the most useful review.")
+        title = st.text_input("Project Title", placeholder="e.g. MediScan AI")
+        description = st.text_area("Project Description", placeholder="Describe your idea in 3-5 sentences...", height=170)
+        evaluate_clicked = st.button("Evaluate This Idea", type="primary", use_container_width=True)
+    if evaluate_clicked:
         if not title.strip() or not description.strip():
             st.warning("Please enter both a project title and description before evaluating.")
             return
         started = time.perf_counter()
-        display_names = {"qwen": "Qwen3-32B", "mistral": "Mistral", "llama": "Llama 3.3 70B"}
+        display_names = {key: MODEL_CONFIGS[key]["model"] for key in MODEL_CONFIGS}
         model_scores, feedback = {}, {}
         model_keys = ("qwen", "mistral", "llama")
         progress_slots = {key: st.empty() for key in model_keys}
@@ -724,8 +802,9 @@ def _live_page_content():
         feedback_columns = st.columns(3)
         for column, model_key in zip(feedback_columns, ("qwen", "mistral", "llama")):
             with column:
-                st.markdown(f'#### {display_names[model_key]} says:')
-                st.markdown(feedback.get(model_key, "Feedback unavailable because this model did not complete."))
+                with st.container(key=f"live_feedback_{model_key}"):
+                    st.markdown(f'#### {display_names[model_key]} says:')
+                    st.markdown(feedback.get(model_key, "Feedback unavailable because this model did not complete."))
 
         rank = "N/A"
         try:

@@ -65,7 +65,7 @@ The default Ollama endpoint is `http://127.0.0.1:11434`. The input is `ideas.xls
 
 ## LM Studio (optional)
 
-Load local Llama, Mistral, and Qwen models in LM Studio, start its local server, then create `.env` from `.env.example` and set:
+Load local Llama, Mistral, and Qwen models in LM Studio, start its local server, then set these values in an optional `.env` file:
 
 ```env
 LLM_BACKEND=lm_studio
@@ -79,7 +79,7 @@ LM Studio exposes an OpenAI-compatible local HTTP interface, but this project us
 
 ## Configuration
 
-Copy `.env.example` to `.env` only if you want to override defaults. Useful settings include `LLM_BACKEND`, local server URLs, model IDs, `LLM_TIMEOUT_SECONDS`, `INPUT_FILE`, and `OUTPUT_FILE`.
+Create an optional `.env` file to override defaults. Useful settings include `LLM_BACKEND`, local server URLs, model IDs, `LLM_TIMEOUT_SECONDS`, `INPUT_FILE`, and `OUTPUT_FILE`.
 
 If you want the script to pick whichever local server is reachable, set:
 
